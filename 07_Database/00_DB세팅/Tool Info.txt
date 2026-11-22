@@ -1,0 +1,2 @@
+1. SqlGate - https://sqlgate.com
+2. dbeaver - https://dbeaver.io/download/
