@@ -1,0 +1,220 @@
+select [Product].[Product];
+
+select [Product].[Product];
+
+select [Location].[Location];
+
+select ([Version].[Version Name] * [Location].[Location]) limit 5;
+
+
+Select ([Version].[Version Name] * [Item].[Item] * [Location].[Location] * [Sales Domain].[Ship To] * [Demand Type].[Demand Type] * [Time].[Week] * [Demand].[DemandID] ) on row, 
+({Measure.[Demand_Ap2id], Measure.[Demand_Build Ahead Time], Measure.[Demand_Business Type], Measure.[Demand_Channel Rank], Measure.[Demand_Customer Rank], Measure.[Demand_Demand Priority], Measure.[Demand_Demand Type], Measure.[Demand_Enterprise], Measure.[Demand_GBM], Measure.[Demand_GC], Measure.[Demand_Global Priority], Measure.[Demand_Item], Measure.[Demand_Local Priority], Measure.[Demand_LocalId], Measure.[Demand_Map Satisfy SS], Measure.[Demand_Match Code], Measure.[Demand_Measure Rank], Measure.[Demand_No Plan], Measure.[Demand_No Split], Measure.[Demand_Prealloc Attribute], Measure.[Demand_Preference Rank], Measure.[Demand_Product Rank], Measure.[Demand_Promised Dlvy Date], Measure.[Demand_Promised Qty], Measure.[Demand_Reason Code], Measure.[Demand_Routing Priority], Measure.[Demand_SO Line Num], Measure.[Demand_Sales Order ID], Measure.[Demand_Salesid], Measure.[Demand_Saleslevel], Measure.[Demand_Ship To Id], Measure.[Demand_Short Code], Measure.[Demand_Siteid], Measure.[Demand_Sopromiseid], Measure.[Demand_Tiebreak], Measure.[Demand_Time Uom], Measure.[Demand_Week]}) on column;
+
+
+Exportall() include Dimension "Config" ;
+
+
+select [Customer].[Account];
+
+select SafeDivide(5.0,2.5,11.0);
+
+select SafeDivide(5.0,0.1,1.0);
+
+
+
+
+
+//#######################################################################
+// IBPL Study 
+//#######################################################################
+// Moduble Capa Simul_LED_T
+select [Version].[Version Name];
+
+select [Item].[Project];
+
+select [Location].[Location];
+
+select [Time].[Week];
+
+select [LED Strategy].[LED Strategy];
+
+select [Product Type].[Product Type];
+
+select [Type F].[Type F];
+
+Select ([Version].[Version Name] * [Item].[Project] * [Location].[Location] * [Time].[Week] * [LED Strategy].[LED Strategy] * [Product Type].[Product Type] * [Type F].[Type F] ) on row, 
+({Measure.[Module Capa Simul LED_T_Cabinet Score], Measure.[Module Capa Simul LED_T_Module Score], Measure.[Module Capa Simul LED_T_SET Score], Measure.[Module Capa Simul LED_T_Screen Score]}) on column;
+
+Select ([Version].[Version Name] * [Location].[Location] * [Time].[Week] * [LED Strategy].[LED Strategy] * [Unit].[Unit] ) on row, 
+({Measure.[Module Capa Simul LED_B_Operating CAPA ByKH], Measure.[Module Capa Simul LED_B_Operating Over and Shortage ByKH], Measure.[Module Capa Simul LED_B_Operating Utilization ByKH], Measure.[Module Capa Simul LED_B_Overtime ByKH], Measure.[Module Capa Simul LED_B_Rotation ByKH], Measure.[Module Capa Simul LED_B_Score ByKH], Measure.[Module Capa Simul LED_B_Shift ByKH], Measure.[Module Capa Simul LED_B_Total CAPA ByKH], Measure.[Module Capa Simul LED_B_Total Over and Shortage ByKH], Measure.[Module Capa Simul LED_B_Total Utilization ByKH]}) on column;
+
+
+// Moduble Capa Simul_LED_B
+select [Version].[Version Name];
+
+select [Time].[Week]
+
+select [Location].[Location] Limit 10;
+
+select [Location].[Location] like [Name P];
+
+select [LED Strategy].[LED Strategy];
+
+select [Unit].[Unit];
+
+Select round(3.5);
+
+Select ([Version].[Version Name] * [Location].[Location] * [Time].[Week] * [LED Strategy].[LED Strategy] * [Unit].[Unit] ) on row, 
+({Measure.[Module Capa Simul LED_B_Operating CAPA], Measure.[Module Capa Simul LED_B_Operating Over and Shortage], Measure.[Module Capa Simul LED_B_Operating Utilization], Measure.[Module Capa Simul LED_B_Overtime], Measure.[Module Capa Simul LED_B_Rotation], Measure.[Module Capa Simul LED_B_Score], Measure.[Module Capa Simul LED_B_Shift], Measure.[Module Capa Simul LED_B_Total CAPA], Measure.[Module Capa Simul LED_B_Total Over and Shortage], Measure.[Module Capa Simul LED_B_Total Utilization]}) on column;
+
+Select ([Version].[Version Name] * [Location].[Location] * [Time].[Week] * [LED Strategy].[LED Strategy] * [Unit].[Unit] ) on row, 
+({Measure.[Module Capa Simul LED_B_Operating CAPA ByKH], Measure.[Module Capa Simul LED_B_Operating Over and Shortage ByKH], Measure.[Module Capa Simul LED_B_Operating Utilization ByKH], Measure.[Module Capa Simul LED_B_Overtime ByKH], Measure.[Module Capa Simul LED_B_Rotation ByKH], Measure.[Module Capa Simul LED_B_Score ByKH], Measure.[Module Capa Simul LED_B_Shift ByKH], Measure.[Module Capa Simul LED_B_Total CAPA ByKH], Measure.[Module Capa Simul LED_B_Total Over and Shortage ByKH], Measure.[Module Capa Simul LED_B_Total Utilization ByKH]}) on column;
+
+
+
+
+Select ([Version].[Version Name] * [Location].[Location] * [Time].[Week] * [LED Strategy].[LED Strategy] * [Unit].[Unit] ) on row, 
+({Measure.[Module Capa Simul LED_B_Operating CAPA], Measure.[Module Capa Simul LED_B_Operating Over and Shortage], Measure.[Module Capa Simul LED_B_Operating Utilization], Measure.[Module Capa Simul LED_B_Overtime], Measure.[Module Capa Simul LED_B_Rotation], Measure.[Module Capa Simul LED_B_Score], Measure.[Module Capa Simul LED_B_Shift], Measure.[Module Capa Simul LED_B_Total CAPA], Measure.[Module Capa Simul LED_B_Total Over and Shortage], Measure.[Module Capa Simul LED_B_Total Utilization]}) on column;
+
+//★★★ 참조 화면 : 찾기 => Plan Monitoring
+//★★★ 페이지 추가시 Pages 오른쪽 상단에 Design Layout 아이콘 클릭해야 왼쪽 트리에 페이지 추가 아이콘이 보여진다.
+
+
+
+// Funciton
+Select abs(-1); => 절대값
+Select coalesce(Measure.[Gross Sales], 0); => Null 값치환(NVL 동일)
+Select ToString(123);
+select round(3.5); => 4 (※개선되어 AwayFromZero 사용안해도 제대로 처리됨)
+Select ceiling(3.2) => 4
+Select floor(3.8) => 3
+Select SafeDivide(5.0, 2.5, 11.0); => 2.5
+Select SafeDivide(5.0, 0.0, 100.0);  => 100(0으로 나누었을경우의 디폴트값)
+Select upper("test 123");
+Select lower("TEST 123");
+Select CurrentUser();
+Select now();
+Select ToDateTime("01/27/2025");  => Data타입으로 변환
+Select DATEADD(Now(), 2, "year");
+Select DATEADD(Now(), 1, "month");
+Select DATEADD(Now(), 2, "day");
+ 
+Select DateDiff(ToDateTime("2025-05-01"), ToDateTime("2025-05-20"), "day");
+Select DateDiff(ToDateTime("2025-05-01"), ToDateTime("2025-05-20"), "week");
+Select DateDiff(ToDateTime("2025-05-01"), ToDateTime("2025-05-20"), "month");
+
+
+Select if(upper("test 1") == "TEST 1") then "OK" else "FAIL";
+Select if(upper("test 1") == "TEST 2") then "OK" else "FAIL";    => else 없이도 가능(else 결과는 null)
+
+Select IsNull;  => 주로 If문에 사용함.  if(IsNull(Measure.A)) then Measure.A * Measure.B else Measure.A;
+Select ~IsNull; => Null 이 아니면...
+Select Measure.A * Measure.B AS transient.[Cal New];  => 조회시 새로운 transient 라는 Measure 의 [Cal New] 로 보여진다.
+
+Select {Measure.[Scenario Demand Mod_Override Seq], Measure.[Scenario Demand Mod_Rate]
+ , coalesce(Measure.[Scenario Demand Mod_Override Seq], 1) *  coalesce(Measure.[Scenario Demand Mod_Rate],1) as transient.[cal_Rate];
+Select ToDateTime("2025-07-05T22:10:15");
+Select between;
+Select ([Product].[SKU].filter(#.[Name] == "val1"));
+Select ([Product].[SKU].filter(#.[Name] in {"val1", "val2"}));
+Select ;
+Select ;
+Select ;
+Select ;
+
+
+======================================================
+IBPL 이용하여 Dimension Member Property 값을 Set하기 
+======================================================
+예) Item Material 디멘젼 있는 BN96-54530A 멤버 프라퍼티 중 LED Material Flag에 Y를 Set
+UPDATEMEMBER( [Item Material].[Item Material] = {,"BN96-54530A"}, [Item Material].[LED Material Flag] = {"Y",});
+
+
+
+Plant (Sub Plant => Sub Location 변경)
+
+
+■ DA_0046 Material PSI 화면 그리드 배경색상(Con. Period, LT) 구현 로직 정리 필요하여 문의 드립니다.													
+- 화면의 'P/O L/T' 일자값을 주차로 변환시 나머지 값에 대한 처리? (올림 or 버림 or 반올림)   예) 74 / 7 = 7.4													
+
+- Start Week, End Week 정보를 구하는 로직을 어떻게 해야 할까요?													
+  1. Plan Week(version) 별로 시작주차, 종료주차 값이 같은지?    예) version 별로 max(week), min(week) 구현													
+  2. Plant, Material 별로 시작주차, 종료주차 값이 다른가요?       예) version, plant, Material 별로 max(week), min(week) 구현													
+													
+======================================================
+어떤 분은 "이것도 몰라?" 하시겠지만, 혹시나 저처럼 알고 계신 분이 있을까봐 공유합니다. 
+
+UI 설계 중 일부 컬럼에 대해 Item 디멘젼 중간 Level Attribute (Product Group, Product Code)를 쓰면 되겠다싶어 
+(1) Product Code를 그레인으로 잡고
+(2) 리포트에서 Product Code와 Product Group을 Row축에 올려놨더니 데이터가 안나옴
+
+결론: 
+(1) 그레인으로 디멘젼 Leaf Level Attribute를 썼다면, 리포트에서 다른 Level Attribute를 끄집어 낼 수 있지만
+(2) 그렌인이 Leaf Level Attribute가 아니면 다른 Level Attribute 사이 Relation을 가져올 수 없다.
+(3) (Guess) 만약, 위 두 Level Attribute가 Hierachy로 묶여있다면 가능할까?
+
+======================================================
+네...
+그리고, 테스트 진행과 관련하여, 좀전에 개발 현황 확인 회의시
+자재 화면에서 사용하는 Plan Week(Version Name)에 대한 정리가 필요합니다.
+
+
+네...
+그리고, 테스트 진행과 관련하여 Plan Week(Version Name)에 대한 정리가 필요합니다.
+좀전에 개발 현황 회의하면서 자재 화면 점검시 '&CWV_MP' 설정하여 화면을 로딩하고 있는데, 
+유상미 프로님 통해 확인한 바에 의하면 주차 변경시 주차 리스트에 대한 범위 설정(Member Filter등) 
+실제 사용하는 버젼으로 사업부별/화면별 문의해서 세팅하는게 맞다고 하셔서요~ 
+확인 부탁 드리겠습니다.
+
+
+select Version.[Version Name].filter(#.Name endswith "MP_P" || #.Name endswith "MP_M" || #.Name endswith "MP_S" || #.Name == "CWV_MP" );
+
+MP_P, MP_M, MP_S(과거 주차 Sync), CWV_MP(당주 Sync)
+CWV_MP 의 경우 현재 수행 중인 버전을 지칭하기 때문에 PRE 또는 MAIN 수행 중에는 해당 버전이 됩니다.
+상기 IBPL 참고하여 과거주차와 당주 버전 버전 필터링 고려해주세요.
+
+
+[DA_0041] Material Constraint
+[DA_0044] Material Mgmt.
+[DA_0046] Material PSI
+[DA_0047] Material Inventory
+[DA_0048] Material Short Analysis
+[DA_0049] Obsolete Stock Simulation
+
+[DA_0067] Gap Analysis - Item Detail
+
+[DA_0070] Demand Modification
+
+[DA_0080] MP 재고 Target 정의
+[DA_0081] 선행생산 리스트 관리 (재고 부진화 조회)
+
+
+
+
+지난번 Company, Plant(Location) 관련 코드, 이름을 모두 출력해 달라는 요청은 보류하기로 했다고 말씀하셨는데,
+(DA_0049)Obsolete Stock Simulation 설계서 Dimension 부분 Company Code 와 Company Name 을 모두 보여주도록 설계되어 있는데
+Company Code 또는 Company Name 둘 중 하나 출력을 제외하면 될까요?
+그리고, 필터 SCM Type => Item.SCM Type, Item => Item.Item 디멘젼 사용하면 되는지 확인 부탁드립니다.
+
+
+어제 공유드린 Short Analysis 화면 Week member filter 12주 고정 세팅은
+CurWeek이 32주인 관계로 조회가 불가하여 제거했는데 추가 확인이 필요합니다.
+View Filter 의 Week 을 member filter 로 제한한 경우 해당 구간 내에서만 선택이 가능합니다.
+member filter 를 34주 구간까지 추가하고, 그 상태에서 202545주 ~ 202526주 지정 시 데이터가 없는 주 데이터는 출력을 못하네요.
+원 요구 사항인 데이터가 없어도 당주 포함 12주 출력 가능한 방안 확인바랍니다.
+
+
+
+
+
+1. 실데이터 생성 후 데이터 건수 이슈로 초기 화면 로딩시 조회 오류 등 필터 적용 문제 발생
+   (Material Mgmt, Material Constraint, Material Inventory)
+
+2. 데이터가 없는 주 데이터 출력 표시 문제  - OK
+   (Material Short Analysis)
+
+3. 다른 MG로 인해 Measure Filter 가 적용 안되는 이슈(공통)
+
+
+SELECT ([Sub Location].[Sub Company].relatedmembers([Sub Company]) * &NSFromSiteMF.relatedmembers([Sub Location]) * [Item Raw Material].[Item Raw Material] * {Measure.[Mat Const_Key Part] , Measure.[Mat Const_Constraint] , Measure.[Mat Const_Constraint Period] , Measure.[Mat Master_Group1] , Measure.[Mat Master_Product Group] , Measure.[Mat Master_Group2] , Measure.[Mat Master_Group2 Detail] , Measure.[Mat Master_PO LT] , Measure.[Mat Master_Safety Stock] , Measure.[Mat Master_Vendor Schema] , Measure.[Mat Master_Purchaser] , Measure.[Mat Master_Dev Purchaser] , Measure.[Mat Master_Purchase Group] , Measure.[Mat Master_Vendor Code] , Measure.[Mat Master_Vendor Name] , Measure.[Mat Const_Creation Time] , Measure.[Mat Const_Created By] , Measure.[Mat Const_Update Time] , Measure.[Mat Const_Updated By]}) on row, () on column include lcid 18, cellproperties {LOCK}, memberproperties {[Item Raw Material].[Item Raw Material], [Description]} {[Sub Location].[Sub Company], [Key]} {[Sub Location].[Sub Location], [Key]}  use aliases {  [Version]:[Plan], [Version].[Version Name]:[Plan ID] }  where {&CWV_MP.filter(#.Name in { "CWV_MP" }) , ( measure.[Mat Const_Key Part] == "Y" )}
+;

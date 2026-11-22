@@ -1,0 +1,2667 @@
+cells:
+  - kind: 2
+    value: "\"\"\"\r
+
+      * 프로그램명\r
+
+      \    - PY_UI_MaterialPSI_CALC_REG\r
+
+      \r
+
+      * 내용\r
+
+      \    - Version이 신규 생성[DB에서 전처리 완료]되면 MG [Material PSI W, Material PSI Sub]
+      의 값을 계산하여 업데이트.\r
+
+      \    - Material PSI Sub 기능은 o9의 AOP 필터가 제대로 작동되지 않아서 대안으로 만은 MG임.(향후 o9 필터
+      기능 정상화되면 관련 기능 삭제될 수 있음.)\r
+
+      \r
+
+      * 변경이력\r
+
+      \    - 2025.12.30 / Kihong Ju / Create\r
+
+      \r
+
+      \  \r
+
+      \r
+
+      * Script Params\r
+
+      \    - Param_OUT_VERSION : 기본값 : CWV_MP, 호출시에, 결과 데이터를 Version Name을 별도로
+      지정하는데에 사용.\r
+
+      \r
+
+      * Input Tables\r
+
+      \    - in_Material_Master\r
+
+      \        Select ([Version].[Version Name].[CWV_MP] * [Sub Location].[Sub
+      Location] * [Item Raw Material].[Item Raw Material]) on row,\r
+
+      \            ({ Measure.[Mat Master_Constraint], Measure.[Mat
+      Master_Constraint (Filter)]\r
+
+      \            , Measure.[Mat Master_Group1], Measure.[Mat Master_Group1
+      (Filter)]\r
+
+      \            , Measure.[Mat Master_Group2], Measure.[Mat Master_Group2
+      (Filter)]\r
+
+      \            , Measure.[Mat Master_Constraint Period], Measure.[Mat
+      Master_PO LT]}) on column\r
+
+      \        where {Association(Measure.[Mat PSI W_Requirement]>=0)}\r
+
+      \        ;\r
+
+      \r
+
+      \    - in_Material_PSI_W\r
+
+      \        Select ([Version].[Version Name].[CWV_MP] * [Sub Location].[Sub
+      Location] * [Time].[Week] * [Item Raw Material].[Item Raw Material] ) on
+      row,\r
+
+      \            ({Measure.[Mat PSI W_BG Signal], Measure.[Mat PSI
+      W_Inventory], Measure.[Mat PSI W_Overdue], Measure.[Mat PSI W_PO
+      Arrival]\r
+
+      \            , Measure.[Mat PSI W_PO BOH], Measure.[Mat PSI W_PO Balance],
+      Measure.[Mat PSI W_PO EOH], Measure.[Mat PSI W_PO Remain]\r
+
+      \            , Measure.[Mat PSI W_PO Short Material], Measure.[Mat PSI
+      W_PO Supply Material], Measure.[Mat PSI W_Requirement], Measure.[Mat PSI
+      W_Requirement Material]\r
+
+      \            , Measure.[Mat PSI W_SN Arrival], Measure.[Mat PSI W_SN BOH],
+      Measure.[Mat PSI W_SN Balance], Measure.[Mat PSI W_SN EOH]\r
+
+      \            , Measure.[Mat PSI W_SN Short Material], Measure.[Mat PSI
+      W_SN Supply Material], Measure.[Mat PSI W_Unplanned]}) on column\r
+
+      \        ;   \r
+
+      \r
+
+      \    - in_Version\r
+
+      \        Select ([Version].[Version Name].[CWV_MP]) on row, () on column\r
+
+      \        include memberproperties\r
+
+      \            {[Version].[Version Name], [DisplayName], [Plan Week]}\r
+
+      \        ;\r
+
+      \r
+
+      \r
+
+      * Output Tables\r
+
+      \    - out_Material_PSI_W\r
+
+      \        Select ([Version].[Version Name].[CWV_MP] * [Sub Location].[Sub
+      Location] * [Time].[Week] * [Item Raw Material].[Item Raw Material] ) on
+      row,\r
+
+      \            ({Measure.[Mat PSI W_BG Signal], Measure.[Mat PSI
+      W_Inventory], Measure.[Mat PSI W_Overdue], Measure.[Mat PSI W_PO
+      Arrival]\r
+
+      \            , Measure.[Mat PSI W_PO BOH], Measure.[Mat PSI W_PO Balance],
+      Measure.[Mat PSI W_PO EOH], Measure.[Mat PSI W_PO Remain]\r
+
+      \            , Measure.[Mat PSI W_PO Short Material], Measure.[Mat PSI
+      W_PO Supply Material], Measure.[Mat PSI W_Requirement]\r
+
+      \            , Measure.[Mat PSI W_Requirement Material], Measure.[Mat PSI
+      W_SN Arrival], Measure.[Mat PSI W_SN BOH]\r
+
+      \            , Measure.[Mat PSI W_SN Balance], Measure.[Mat PSI W_SN EOH],
+      Measure.[Mat PSI W_SN Short Material]\r
+
+      \            , Measure.[Mat PSI W_SN Supply Material], Measure.[Mat PSI
+      W_Unplanned]}) on column\r
+
+      \        ;\r
+
+      \r
+
+      \    - out_Material_PSI_Sub\r
+
+      \        Select ([Version].[Version Name].[CWV_MP] * [Sub Location].[Sub
+      Location] * [Item Raw Material].[Item Raw Material] ) on row, \r
+
+      \            ({Measure.[Mat PSI Sub_Constraint], Measure.[Mat PSI
+      Sub_Constraint (Filter)]\r
+
+      \            , Measure.[Mat PSI Sub_Group1], Measure.[Mat PSI Sub_Group1
+      (Filter)]\r
+
+      \            , Measure.[Mat PSI Sub_Group2], Measure.[Mat PSI Sub_Group2
+      (Filter)]}) on column\r
+
+      \        ;\r
+
+      \r
+
+      \r
+
+      * Flow Summary\r
+
+      \    STEP 0. 전처리: rename 등 로직 전개에 필요한 작업 수행\r
+
+      \        STEP 0-0. in_Version 에서 planweek 추출\r
+
+      \        STEP 0-1. Sub Location, Item Raw Material별로 Planweek 부터 Planweek
+      포함 34주차를 데이터 프레임에 추가.\r
+
+      \        STEP 0-2. 결측치는 0 으로 처리\r
+
+      \        STEP 0-3. Version 컬럼 값 설정 'CWV_MP'\r
+
+      \        \r
+
+      \    STEP 1. in_Material_PSI_W 의 Requirement(Material) 계산\r
+
+      \        Measure.[Mat PSI W_Requirement Material] = Measure.[Mat PSI
+      W_Requirement] + Measure.[Mat PSI W_Unplanned]\r
+
+      \             + Measure.[Mat PSI W_Overdue] \r
+
+      \r
+
+      \    STEP 2. in_Material_PSI_W 의 BOH 값 계산 (SN, PO 구분)\r
+
+      \        Step 2-1. Measure.[Mat PSI W_SN BOH]\r
+
+      \            첫 주차(Planweek)인 경우, Measure.[Mat PSI W_Inventory] 값으로 생성하고,
+      \r
+
+      \            이후 주차는 전주의 S/N EOH(Measure.[Mat PSI W_SN EOH]) 값으로 세팅한다.\r
+
+      \        Step 2-2. Measure.[Mat PSI W_PO BOH]\r
+
+      \            첫 주차(Planweek)인 경우, Measure.[Mat PSI W_Inventory] 값으로 생성하고,
+      \r
+
+      \            이후 주차는 전주의 PO EOH(Measure.[Mat PSI W_PO EOH]) 값으로 세팅한다.\r
+
+      \r
+
+      \    STEP 3. in_Material_PSI_W 의 Supply Material 값 계산 (SN, PO 구분)\r
+
+      \        Step 3-1. Measure.[Mat PSI W_SN Supply Material] \r
+
+      \            Measure.[Mat PSI W_SN BOH] + Measure.[Mat PSI W_SN Arrival]
+      계산 값이 \r
+
+      \            Measure.[Mat PSI W_Requirement Material] 보다 크면 Measure.[Mat
+      PSI W_Requirement Material] 값으로 세팅,\r
+
+      \            그렇지 않으면, Measure.[Mat PSI W_SN BOH] + Measure.[Mat PSI W_SN
+      Arrival] 값으로 세팅한다.\r
+
+      \        Step 3-2. Measure.[Mat PSI W_PO Supply Material] \r
+
+      \            Measure.[Mat PSI W_PO BOH] + Measure.[Mat PSI W_SN Arrival] +
+      Measure.[Mat PSI W_PO Arrival] 계산 값이 \r
+
+      \            Measure.[Mat PSI W_Requirement Material] 보다 크면 Measure.[Mat
+      PSI W_Requirement Material] 값으로 세팅,\r
+
+      \            그렇지 않으면, Measure.[Mat PSI W_PO BOH] + Measure.[Mat PSI W_SN
+      Arrival] + Measure.[Mat PSI W_PO Arrival] 값으로 세팅한다.           \r
+
+      \r
+
+      \    STEP 4. in_Material_PSI_W 의 Supply Material 값 계산 (SN, PO 구분)    \r
+
+      \        Step 4-1. Measure.[Mat PSI W_SN Short Material]\r
+
+      \            Measure.[Mat PSI W_Requirement Material] - Measure.[Mat PSI
+      W_SN Supply Material] 계산하여 세팅한다.\r
+
+      \        Step 4-2. Measure.[Mat PSI W_PO Short Material]\r
+
+      \            Measure.[Mat PSI W_Requirement Material] - Measure.[Mat PSI
+      W_PO Supply Material] 계산하여 세팅한다.\r
+
+      \r
+
+      \    STEP 5. in_Material_PSI_W 의 EOH 값 계산 (SN, PO 구분)   \r
+
+      \        Step 5-1. Measure.[Mat PSI W_SN EOH]  \r
+
+      \            Measure.[Mat PSI W_SN BOH] - Measure.[Mat PSI W_SN Supply
+      Material] + Measure.[Mat PSI W_SN Arrival] 계산하여 세팅한다.\r
+
+      \        Step 5-2. Measure.[Mat PSI W_PO EOH]  \r
+
+      \            Measure.[Mat PSI W_PO BOH] - Measure.[Mat PSI W_PO Supply
+      Material] + Measure.[Mat PSI W_SN Arrival] \r
+
+      \            + Measure.[Mat PSI W_PO Arrival] 계산하여 세팅한다.\r
+
+      \            \r
+
+      \    STEP 6. in_Material_PSI_W 의 Balance 값 계산 (SN, PO 구분)   \r
+
+      \        Step 6-1. Measure.[Mat PSI W_SN Balance]   \r
+
+      \            첫 주(Planweek)는, Measure.[Mat PSI W_SN BOH] + Measure.[Mat PSI
+      W_SN Arrival] \r
+
+      \            - Measure.[Mat PSI W_Requirement Material] 계산하고,\r
+
+      \            이후는, 전주 Measure.[Mat PSI W_SN Balance] + Measure.[Mat PSI
+      W_SN Arrival] \r
+
+      \            - Measure.[Mat PSI W_Requirement Material] 계산하여 세팅한다.\r
+
+      \        Step 6-2. Measure.[Mat PSI W_PO Balance] \r
+
+      \            첫 주(Planweek)는, Measure.[Mat PSI W_PO BOH] + Measure.[Mat PSI
+      W_SN Arrival] \r
+
+      \            + Measure.[Mat PSI W_PO Arrival] - Measure.[Mat PSI
+      W_Requirement Material] 계산하고,\r
+
+      \            이 후는, 전주 Measure.[Mat PSI W_PO Balance] + Measure.[Mat PSI
+      W_SN Arrival] \r
+
+      \            + Measure.[Mat PSI W_PO Arrival] - Measure.[Mat PSI
+      W_Requirement Material] 계산하여 세팅한다.\r
+
+      \            \r
+
+      \    STEP 7. in_Material_PSI_W 의 Mat PSI W_BG Signal 값 계산 \r
+
+      \        Step 7-0. in_Material_Master 의 PO LT, Constraint Period 값을
+      in_Material_PSI_W와 동일한 Grain 기준으로 붙여준다. \r
+
+      \        Step 7-1. 시작 주차를 포함하여 Ceiling(Measure.[Mat Master_PO LT] / 7.0 에
+      해당하는 주차인 경우 LT구간에 해당하여 '2' 값이 된다.\r
+
+      \        Step 7-2. 시작 주차를 포함하여 Measure.[Mat Master_Constraint Period] 에
+      해당하면 Con. Period 구간에 해당함으로 '1' 값을 세팅한다.      \r
+
+      \r
+
+      \r
+
+      \    STEP 8. in_Material_Master 의 컬럼명을 변경하여 Material_PSI_Sub를 생성한다. \r
+
+      \        (Version 별 기존 데이터 삭제 후 재 생성)\r
+
+      \        \r
+
+      \    STEP 9. Output 정리\r
+
+      \r
+
+      \r
+
+      \r
+
+      * Validation :\r
+
+      \r
+
+      \r
+
+      * Execution :\r
+
+      \     EXEC plugin instance [PY_UI_MaterialPSI_CALC_REG]\r
+
+      \             for measures { [Mat PSI W_Requirement Material] }\r
+
+      \        using scope ([Version].[Version Name].[CWV_MP])\r
+
+      \        using arguments {\r
+
+      \            (ExecutionMode, \"MediumWeight\")\r
+
+      \            , (Param_OUT_VERSION, \"CWV_MP\")\r
+
+      \            , ([MaxSliceTableCells],2000000000)\r
+
+      \            , (MaxConcurrency, 1 )\r
+
+      \            , (IncludeNullRows, False)\r
+
+      \            , ([Param.o9_sys_log_level], \"DEBUG\")\r
+
+      \        };\r
+
+      \r
+
+      \"\"\"\r
+
+      \r
+
+      \r
+
+      import os.path\r
+
+      import time\r
+
+      from datetime import datetime, timedelta\r
+
+      import traceback\r
+
+      import inspect\r
+
+      \r
+
+      from NSCMCommon import NSCMCommon as common\r
+
+      import pandas as pd\r
+
+      import numpy as np\r
+
+      \r
+
+      from numba import njit      # For 문 실행용, 속도 매우 빠름(C, Fotran 수준)\r
+
+      \r
+
+      \r
+
+      \r
+
+      #########################################################################\
+      ###############################################\r
+
+      # o9 Column Class : Measure Name이 변경되는 경우 유연히 대처하기 위함. \r
+
+      #########################################################################\
+      ###############################################\r
+
+      class BaseColumnClass:\r
+
+      \    @staticmethod\r
+
+      \    def clean_column_name(column_name):\r
+
+      \        '''\r
+
+      \        컬럼 명을 변환합니다.\r
+
+      \        - [].[] 구조: 앞쪽의 []를 제거 (예: '[Version].[Version Name]' ->
+      'Version.[Version Name]')\r
+
+      \        - Measure.[메저명] 구조: 메저명만 추출 (예: 'Measure.[Mat Master_Constraint]'
+      -> 'Mat Master_Constraint')\r
+
+      \        - 그 외: 그대로 반환\r
+
+      \        '''\r
+
+      \        # 1. [].[] 구조 처리\r
+
+      \        if column_name.startswith('[') and '].' in column_name:\r
+
+      \            bracket_end = column_name.find('].')\r
+
+      \            if bracket_end != -1:\r
+
+      \                cleaned_prefix = column_name[1:bracket_end]\r
+
+      \                remaining = column_name[bracket_end + 2:]  # '].' 이후\r
+
+      \                return cleaned_prefix + '.' + remaining\r
+
+      \        \r
+
+      \        # 2. Measure.[메저명] 구조 처리\r
+
+      \        if column_name.startswith('Measure.') and '[' in column_name and
+      ']' in column_name:\r
+
+      \            start = column_name.find('[')\r
+
+      \            end = column_name.find(']', start)\r
+
+      \            if start != -1 and end != -1:\r
+
+      \                return column_name[start + 1:end]  # '['와 ']' 사이의 내용만
+      추출\r
+
+      \        \r
+
+      \        # 3. 조건에 맞지 않으면 원래 문자열 반환\r
+
+      \        return column_name\r
+
+      \r
+
+      \    @classmethod\r
+
+      \    def get_cleaned_columns_dataframe(cls):\r
+
+      \        '''\r
+
+      \        클래스에 선언된 컬럼명 속성들을 clean_column_name으로 변환하여,\r
+
+      \        빈 DataFrame을 생성하여 반환합니다.\r
+
+      \        - 대상: 키가 대문자이고 값이 문자열인 속성들 (순서대로).\r
+
+      \        - 반환: pd.DataFrame (예: {'Version.[Version Name]': [], ...})\r
+
+      \        '''\r
+
+      \        cleaned_columns = {}\r
+
+      \        for attr_name, attr_value in cls.__dict__.items():\r
+
+      \            # 키가 대문자이고 값이 문자열인 속성만 대상\r
+
+      \            if attr_name.isupper() and isinstance(attr_value, str):\r
+
+      \                cleaned_name = cls.clean_column_name(attr_value)\r
+
+      \                cleaned_columns[cleaned_name] = []\r
+
+      \        return pd.DataFrame(cleaned_columns)\r
+
+      \r
+
+      \    @classmethod\r
+
+      \    def get_reverse_column_mapping(cls):\r
+
+      \        '''\r
+
+      \        클래스에 선언된 컬럼명 속성들을 기반으로,\r
+
+      \        클린드 컬럼명(키) -> 원본 컬럼명(값)으로 매핑하는 딕셔너리를 반환합니다.\r
+
+      \        - 대상: 키가 대문자이고 값이 문자열인 속성들 (순서대로).\r
+
+      \        - 반환: dict (예: {'Version.[Version Name]': '[Version].[Version
+      Name]', ...})\r
+
+      \        - 용도: DataFrame 컬럼명 변경에 사용 (df.rename(columns=mapping))\r
+
+      \        '''\r
+
+      \        reverse_mapping = {}\r
+
+      \        for attr_name, attr_value in cls.__dict__.items():\r
+
+      \            # 키가 대문자이고 값이 문자열인 속성만 대상\r
+
+      \            if attr_name.isupper() and isinstance(attr_value, str):\r
+
+      \                cleaned_name = cls.clean_column_name(attr_value)\r
+
+      \                reverse_mapping[cleaned_name] = attr_value\r
+
+      \        return reverse_mapping\r
+
+      \r
+
+      \r
+
+      # Version: Dimension (BaseColumnClass 상속)\r
+
+      class CL_Version(BaseColumnClass):\r
+
+      \    VERSIONNAME = '[Version].[Version Name]'\r
+
+      \    DISPLAYNAME = '[Version].[DisplayName]'\r
+
+      \    PLANWEEK = '[Version].[Plan Week]'\r
+
+      \r
+
+      \r
+
+      # MG: Material Master (BaseColumnClass 상속)\r
+
+      class CL_Mat_Master(BaseColumnClass):\r
+
+      \    VERSION = '[Version].[Version Name]'\r
+
+      \    SUB_LOCATION = '[Sub Location].[Sub Location]'\r
+
+      \    ITEM_RAW_MATERIAL = '[Item Raw Material].[Item Raw Material]'\r
+
+      \    CONSTRAINT = 'Measure.[Mat Master_Constraint]'\r
+
+      \    CONSTRAINT_FILTER = 'Measure.[Mat Master_Constraint (Filter)]'    \r
+
+      \    CONSTRAINT_PERIOD = 'Measure.[Mat Master_Constraint Period]' \r
+
+      \    MASTER_GROUP1 = 'Measure.[Mat Master_Group1]' \r
+
+      \    MASTER_GROUP1_FILTER = 'Measure.[Mat Master_Group1 (Filter)]'\r
+
+      \    MASTER_GROUP2 = 'Measure.[Mat Master_Group2]'\r
+
+      \    MASTER_GROUP2_FILTER = 'Measure.[Mat Master_Group2 (Filter)]'\r
+
+      \    MASTER_POLT = 'Measure.[Mat Master_PO LT]'\r
+
+      \r
+
+      \r
+
+      # MG: Material PSI Sub (BaseColumnClass 상속)\r
+
+      class CL_Mat_PSI_Sub(BaseColumnClass):\r
+
+      \    VERSION = '[Version].[Version Name]'\r
+
+      \    SUB_LOCATION = '[Sub Location].[Sub Location]'\r
+
+      \    ITEM_RAW_MATERIAL = '[Item Raw Material].[Item Raw Material]'\r
+
+      \    CONSTRAINT = 'Measure.[Mat PSI Sub_Constraint]'\r
+
+      \    CONSTRAINT_FILTER = 'Measure.[Mat PSI Sub_Constraint
+      (Filter)]'     \r
+
+      \    MASTER_GROUP1 = 'Measure.[Mat PSI Sub_Group1]' \r
+
+      \    MASTER_GROUP1_FILTER = 'Measure.[Mat PSI Sub_Group1 (Filter)]'\r
+
+      \    MASTER_GROUP2 = 'Measure.[Mat PSI Sub_Group2]'\r
+
+      \    MASTER_GROUP2_FILTER = 'Measure.[Mat PSI Sub_Group2 (Filter)]'\r
+
+      \r
+
+      \r
+
+      # MG: Material PSI W (BaseColumnClass 상속)\r
+
+      class CL_Mat_PSI_W(BaseColumnClass):\r
+
+      \    VERSION = '[Version].[Version Name]'\r
+
+      \    SUB_LOCATION = '[Sub Location].[Sub Location]'\r
+
+      \    ITEM_RAW_MATERIAL = '[Item Raw Material].[Item Raw Material]'\r
+
+      \    WEEK = '[Time].[Week]'\r
+
+      \    BG_SIGNAL = 'Measure.[Mat PSI W_BG Signal]' \r
+
+      \    INVENTORY ='Measure.[Mat PSI W_Inventory]' \r
+
+      \    OVERSDUE = 'Measure.[Mat PSI W_Overdue]' \r
+
+      \    PO_ARRIVAL = 'Measure.[Mat PSI W_PO Arrival]'\r
+
+      \    PO_BOH = 'Measure.[Mat PSI W_PO BOH]' \r
+
+      \    PO_BALANCE = 'Measure.[Mat PSI W_PO Balance]'\r
+
+      \    PO_EOH = 'Measure.[Mat PSI W_PO EOH]' \r
+
+      \    PO_REMAIN = 'Measure.[Mat PSI W_PO Remain]'\r
+
+      \    PO_SHORT_MATERIAL = 'Measure.[Mat PSI W_PO Short Material]' \r
+
+      \    PO_SUPPLY_MATERIAL = 'Measure.[Mat PSI W_PO Supply Material]'\r
+
+      \    REQUIREMENT = 'Measure.[Mat PSI W_Requirement]'\r
+
+      \    REQUIREMENT_MATERIAL = 'Measure.[Mat PSI W_Requirement Material]'\r
+
+      \    SN_ARRIVAL = 'Measure.[Mat PSI W_SN Arrival]'\r
+
+      \    SN_BOH = 'Measure.[Mat PSI W_SN BOH]'\r
+
+      \    SN_BALANCE ='Measure.[Mat PSI W_SN Balance]'\r
+
+      \    SN_EOH = 'Measure.[Mat PSI W_SN EOH]'\r
+
+      \    SN_SHORT_MATERIAL = 'Measure.[Mat PSI W_SN Short Material]'\r
+
+      \    SN_SUPPLY_MATERIAL = 'Measure.[Mat PSI W_SN Supply Material]'\r
+
+      \    UNPLANNED = 'Measure.[Mat PSI W_Unplanned]'\r
+
+      \r
+
+      \r
+
+      \r
+
+      \r
+
+      #########################################################################\
+      ###############################################\r
+
+      # Local 개발 시에 필요한 공통 변수 선언\r
+
+      #########################################################################\
+      ###############################################\r
+
+      # o9에 저장된 instanceName\r
+
+      str_instance = \"PY_UI_MaterialPSI_CALC_REG\"\r
+
+      str_input_dir = \"Input/MasterPSI_CALC_REG\"\r
+
+      str_output_dir = \"Output/MasterPSI_CALC_REG\"\r
+
+      is_local = common.gfn_get_isLocal()\r
+
+      is_print = True\r
+
+      flag_csv = True\r
+
+      flag_exception = True\r
+
+      \r
+
+      \r
+
+      #########################################################################\
+      ###############################################\r
+
+      # log 설정 : PROGRAM file_name\r
+
+      #########################################################################\
+      ###############################################\r
+
+      logger = common.G_Logger(p_py_name=str_instance)\r
+
+      common.gfn_set_local_logfile()\r
+
+      LOG_LEVEL = common.G_log_level\r
+
+      \r
+
+      \r
+
+      def fn_log_dataframe(df_p_source: pd.DataFrame, str_p_source_name: str) ->
+      None:\r
+
+      \    \"\"\"\r
+
+      \    Dataframe 로그 출력 조건 지정 함수\r
+
+      \    :param df_p_source: 로그로 찍을 Dataframe\r
+
+      \    :param str_p_source_name: 로그로 찍을 Dataframe 명\r
+
+      \    :return: None\r
+
+      \    \"\"\"\r
+
+      \    is_output = False\r
+
+      \    if str_p_source_name.startswith('out_'):\r
+
+      \        is_output = True\r
+
+      \r
+
+      \    if is_print:\r
+
+      \        logger.PrintDF(p_df=df_p_source, p_df_name=str_p_source_name,
+      p_log_level=LOG_LEVEL.debug(), p_format=1)\r
+
+      \        if is_local and not df_p_source.empty and flag_csv:\r
+
+      \            # 로컬 Debugging 시 csv 파일 출력\r
+
+      \            df_p_source.to_csv(str_output_dir + \"/\" + str_p_source_name
+      + \".csv\", encoding=\"UTF8\", index=False)\r
+
+      \    else:\r
+
+      \        # 최종 Output 테이블인 경우에는 무조건 로그 출력\r
+
+      \        if is_output:\r
+
+      \            logger.PrintDF(p_df=df_p_source, p_df_name=str_p_source_name,
+      p_log_level=LOG_LEVEL.debug(), p_format=1)\r
+
+      \            if is_local and not df_p_source.empty:\r
+
+      \                # 로컬 Debugging 시 csv 파일 출력\r
+
+      \                df_p_source.to_csv(str_output_dir + \"/\" +
+      str_p_source_name + \".csv\", encoding=\"UTF8\", index=False)\r
+
+      \r
+
+      \r
+
+      def _decoration_(func):\r
+
+      \    \"\"\"\r
+
+      \    1. 소스 내 함수 실행 시 반복되는 코드를 데코레이터로 변형하여 소스 라인을 줄일 수 있도록 함.\r
+
+      \    2. 각 Step을 함수로 실행하는 경우 해당 함수에 뒤따르는 Step log 및 DF 로그, DF 로컬 출력을 데코레이터로
+      항상 출력하게 함.\r
+
+      \    :param func:\r
+
+      \    :return:\r
+
+      \    \"\"\"\r
+
+      \    def wrapper(*args, **kwargs):\r
+
+      \        # 함수 시작 시각\r
+
+      \        tm_start = time.time()\r
+
+      \        # 함수 실행\r
+
+      \        result = func(*args)\r
+
+      \        # 함수 종료 시각\r
+
+      \        tm_end = time.time()\r
+
+      \        # 함수 실행 시간 로그\r
+
+      \        logger.Note(p_note=f'[{func.__name__}] Total time is {tm_end -
+      tm_start:.5f} sec.',\r
+
+      \                    p_log_level=LOG_LEVEL.debug())\r
+
+      \        # Step log 및 DF 로컬 출력 등을 위한 Keywords 변수 확인\r
+
+      \        # Step No\r
+
+      \        _step_no = kwargs.get('p_step_no')\r
+
+      \        _step_desc = kwargs.get('p_step_desc')\r
+
+      \        _df_name = kwargs.get('p_df_name')\r
+
+      \        _warn_desc = kwargs.get('p_warn_desc')\r
+
+      \r
+
+      \        # Step log 관련 변수가 입력된 경우 Step log 출력\r
+
+      \        if _step_no is not None and _step_desc is not None:\r
+
+      \            logger.Step(p_step_no=_step_no, p_step_desc=_step_desc)\r
+
+      \        # Warning 메시지가 있는 경우\r
+
+      \        if _warn_desc is not None:\r
+
+      \            # 함수 실행 결과가 DF이면서 해당 DF가 비어 있는 경우\r
+
+      \            if type(result) == pd.DataFrame and result.empty:\r
+
+      \                logger.Note(p_note=_warn_desc,
+      p_log_level=LOG_LEVEL.warning())\r
+
+      \        # DF 명이 있는 경우 로그 및 로컬 출력\r
+
+      \        if _df_name is not None:\r
+
+      \            fn_log_dataframe(result, _df_name)\r
+
+      \r
+
+      \        return result\r
+
+      \r
+
+      \    return wrapper\r
+
+      \r
+
+      \r
+
+      def fn_check_input_table(df_p_source: pd.DataFrame, str_p_source_name:
+      str, str_p_cond: str) -> None:\r
+
+      \    \"\"\"\r
+
+      \    Input Table을 체크한 결과를 로그 또는 Exception으로 표시한다.\r
+
+      \    :param df_p_source: Input table\r
+
+      \    :param str_p_source_name: Name of Input table\r
+
+      \    :param str_p_cond: '0' - Exception, '1' - Warning Log\r
+
+      \    :return: None\r
+
+      \    \"\"\"\r
+
+      \    # Input Table 로그 출력\r
+
+      \    logger.PrintDF(p_df=df_p_source, p_df_name=str_p_source_name,
+      p_log_level=LOG_LEVEL.debug(), p_format=1)\r
+
+      \r
+
+      \    if not df_p_source is None and df_p_source.empty:\r
+
+      \        if str_p_cond == '0':\r
+
+      \            # 테이블이 비어 있는 경우 raise Exception\r
+
+      \            raise Exception(f'[Exception] Input
+      table({str_p_source_name}) is empty.')\r
+
+      \        else:\r
+
+      \            # 테이블이 비어 있는 경우 Warning log\r
+
+      \            logger.Note(p_note=f'Input table({str_p_source_name}) is
+      empty.', p_log_level=LOG_LEVEL.warning())\r
+
+      \r
+
+      \r
+
+      \r
+
+      \r
+
+      \r
+
+      @_decoration_\r
+
+      def fn_set_header(str_p_cond: str) -> pd.DataFrame:\r
+
+      \    \"\"\"\r
+
+      \    MediumWeight로 실행 시 헤더 없는 Output 테이블이 있는 경우 오류가 발생하므로\r
+
+      \    해당 오류를 방지하기 위해 헤더만 있는 DF를 생성함.\r
+
+      \    :param str_p_cond: 0 - out_LoadingMasterFromSite,\r
+
+      \                       1 - out_LoadingMasterToSite\r
+
+      \                       2 - out_LoadingMasterAccount\r
+
+      \                       3 - out_LoadingMasterShipTo\r
+
+      \    :return: DataFrame\r
+
+      \    \"\"\"\r
+
+      \r
+
+      \    df_return = pd.DataFrame()\r
+
+      \    # df_out_ActivityProdParam\r
+
+      \r
+
+      \    if str_p_cond == '0':\r
+
+      \        df_return = pd.DataFrame(\r
+
+      \            {\r
+
+      \                'Version.[Version Name]': [], 'Activity1.[Activity1]':
+      [],\r
+
+      \                'Activity2.[Activity2]': [], 'Activity3.[Activity3]': [],
+      'Item.[Item]': [],\r
+
+      \                'Location.[Location]': [], 'W Activity Priority': [], 'W
+      LotSize Increment': [],\r
+
+      \                'W Material Production Association': [], 'Material
+      Production Association': [],\r
+
+      \                'W Material Production Quantity Per': []\r
+
+      \            }\r
+
+      \        )\r
+
+      \    return df_return\r
+
+      \r
+
+      \r
+
+      def fn_merge_after(df_p_source: pd.DataFrame) -> pd.DataFrame:\r
+
+      \    \"\"\"\r
+
+      \    Merge 후처리\r
+
+      \    :Merge 후 postfix '_y'가 붙은 컬럼 삭제, Merge 후 postfix '_x'가 붙은 컬럼에서 '_x'
+      삭제\r
+
+      \    :param df_p_source: Merge 후처리 대상 DataFrame\r
+
+      \    :return: DataFrame\r
+
+      \    \"\"\"\r
+
+      \r
+
+      \    # Merge 후 postfix '_y'가 붙은 컬럼 추출\r
+
+      \    list_columns_y = df_p_source.filter(regex='_y$', axis=1).columns\r
+
+      \r
+
+      \    # Merge 후 postfix '_y'가 붙은 컬럼 삭제\r
+
+      \    df_p_source.drop(list_columns_y, axis=1, inplace=True)\r
+
+      \r
+
+      \    # Merge 후 postfix '_x'가 붙은 컬럼에서 '_x' 삭제\r
+
+      \    list_columns_all = df_p_source.columns\r
+
+      \    list_columns_all_rename = []\r
+
+      \    for col in list_columns_all:\r
+
+      \        list_columns_all_rename.append(col.rstrip('_x'))\r
+
+      \r
+
+      \    df_p_source.columns = list_columns_all_rename\r
+
+      \    \r
+
+      \    return df_p_source # 결과 리턴\r
+
+      \r
+
+      \r
+
+      def planweek_to_week_list(planweek: int, n_weeks: int = 34) ->
+      pd.Series:\r
+
+      \    '''\r
+
+      \    planweek(YYYYWW, ISO week)을 포함하여 n_weeks개의 YYYYWW(정수)를 생성\r
+
+      \    '''\r
+
+      \    s = str(planweek).zfill(6)\r
+
+      \    iso_monday = pd.to_datetime(\r
+
+      \        s[:4] + \"-W\" + s[4:] + \"-1\",\r
+
+      \        format=\"%G-W%V-%u\",\r
+
+      \        errors=\"raise\",\r
+
+      \    )\r
+
+      \    mondays = iso_monday + pd.to_timedelta(range(n_weeks), unit=\"W\")\r
+
+      \    iso = mondays.isocalendar()\r
+
+      \    weeks = (iso[\"year\"].astype(int) * 100 +
+      iso[\"week\"].astype(int)).astype(\"int64\")\r
+
+      \    return weeks\r
+
+      \r
+
+      \r
+
+      @_decoration_\r
+
+      def expand_df_weeks_with_mode(\r
+
+      \    df_p_source: pd.DataFrame,\r
+
+      \    planweek: int,\r
+
+      \    col_sub_loc: str = \"Sub Location.[Sub Location]\",\r
+
+      \    col_item: str = \"Item Raw Material.[Item Raw Material]\",\r
+
+      \    col_week: str = \"Time.[Week]\",\r
+
+      \    n_weeks: int = 34,\r
+
+      \    mode: str = \"truncate\",\r
+
+      \    fill_missing_weeks: bool = True,\r
+
+      \    add_flag_is_new: bool = True\r
+
+      \    ) -> pd.DataFrame:\r
+
+      \    '''\r
+
+      \    (Sub Location, Item Raw Material)별 Week를 planweek 포함 n_weeks로 확장하되,\r
+
+      \    원본에 더 뒤 주차가 있는 경우를 mode로 제어한다.\r
+
+      \r
+
+      \    mode:\r
+
+      \    - \"truncate\": planweek~planweek+ (n_weeks-1) 범위 밖의 원본 row 삭제\r
+
+      \    - \"keep\":    planweek~범위는 확장으로 채우고, 범위 밖 원본 row는 유지\r
+
+      \r
+
+      \    fill_missing_weeks:\r
+
+      \    - True면 planweek~범위에서 없는 주차 row를 생성\r
+
+      \    - False면 생성은 하지 않고(원본 유지/필터만) 모드 동작만 수행\r
+
+      \r
+
+      \    add_flag_is_new:\r
+
+      \    - True면 확장으로 새로 생긴 row에 is_new=True 표시\r
+
+      \    '''\r
+
+      \r
+
+      \    print(f\"🟧planweek: {planweek}\")\r
+
+      \r
+
+      \    # 함수명\r
+
+      \    str_my_name = inspect.stack()[0][3]\r
+
+      \    # Return 변수\r
+
+      \    df_return = pd.DataFrame()\r
+
+      \r
+
+      \    # 입력 파라미터가 비어 있는 경우 비어 있는 DataFrame(df_p_source)을 리턴\r
+
+      \    if df_p_source.empty:\r
+
+      \        logger.Note(p_note=f'[{str_my_name}] 입력으로 받은 데이터(df_p_source)가 비어
+      있습니다.',\r
+
+      \                    p_log_level=LOG_LEVEL.warning())\r
+
+      \        return df_p_source\r
+
+      \r
+
+      \    if mode not in (\"truncate\", \"keep\"):\r
+
+      \        raise ValueError(\"mode must be 'truncate' or 'keep'\")\r
+
+      \r
+
+      \    df = df_p_source.copy()\r
+
+      \r
+
+      \    # Week 정리: 문자열/숫자 혼재 대비\r
+
+      \    df[col_week] = df[col_week].astype(str).str.strip()\r
+
+      \    df[\"_week_iw\"] = pd.to_numeric(df[col_week], errors=\"coerce\")\r
+
+      \r
+
+      \    # 주차 파싱 실패 체크(원하면 에러로 바꿔도 됨)\r
+
+      \    # 여기서는 NaN은 유지하되, 필터링 비교에서 제외될 수 있음\r
+
+      \    # df[\"_week_iw\"].isna().any() -> 필요 시 로깅\r
+
+      \r
+
+      \    # Planweek 윈도우 생성\r
+
+      \    week_list = planweek_to_week_list(planweek=planweek,
+      n_weeks=n_weeks)\r
+
+      \    win_min = int(week_list.min())\r
+
+      \    win_max = int(week_list.max())\r
+
+      \r
+
+      \    # 1) truncate면 원본을 윈도우로 자른다\r
+
+      \    if mode == \"truncate\":\r
+
+      \        df_base = df[df[\"_week_iw\"].between(win_min, win_max,
+      inclusive=\"both\")].copy()\r
+
+      \    else:\r
+
+      \        df_base = df\r
+
+      \r
+
+      \    # 확장 자체를 안 한다면, (truncate/keep)만 적용해서 반환\r
+
+      \    if not fill_missing_weeks:\r
+
+      \        out = df_base.sort_values([col_sub_loc, col_item, \"_week_iw\"],
+      kind=\"mergesort\").reset_index(drop=True)\r
+
+      \        out[col_week] = out[\"_week_iw\"].astype(\"Int64\").astype(str)\r
+
+      \        out = out.drop(columns=[\"_week_iw\"], errors=\"ignore\")\r
+
+      \        return out\r
+
+      \r
+
+      \    # (Sub Location, Item) 유니크 키\r
+
+      \    keys = (\r
+
+      \        df_base[[col_sub_loc, col_item]]\r
+
+      \        .drop_duplicates()\r
+
+      \        .reset_index(drop=True)\r
+
+      \    )\r
+
+      \r
+
+      \    # 키 x (34주) grid 생성\r
+
+      \    grid = keys.merge(pd.DataFrame({\"_week_iw\": week_list}),
+      how=\"cross\")\r
+
+      \r
+
+      \    # 2) 윈도우 범위(grid)와 원본 결합 -> 누락 주차 row 생성\r
+
+      \    out_win = grid.merge(\r
+
+      \        df_base,\r
+
+      \        on=[col_sub_loc, col_item, \"_week_iw\"],\r
+
+      \        how=\"left\",\r
+
+      \        suffixes=(\"\", \"_orig\"),\r
+
+      \        indicator=add_flag_is_new,   # indicator는 True일 때만 생성\r
+
+      \    )\r
+
+      \r
+
+      \    if add_flag_is_new:\r
+
+      \        out_win[\"is_new\"] = out_win[\"_merge\"].eq(\"left_only\")\r
+
+      \        out_win = out_win.drop(columns=[\"_merge\"], errors=\"ignore\")\r
+
+      \r
+
+      \    out_win[col_week] =
+      out_win[\"_week_iw\"].astype(\"int64\").astype(str)\r
+
+      \r
+
+      \    # 3) keep 모드면 윈도우 밖 원본을 다시 붙인다\r
+
+      \    if mode == \"keep\":\r
+
+      \        extra = df[df[\"_week_iw\"].gt(win_max)].copy()\r
+
+      \        # 윈도우보다 \"이전\" 주차도 유지할지 여부는 정책에 따라 다름.\r
+
+      \        # 필요하면 아래 주석 해제해서 이전 주차도 붙이세요.\r
+
+      \        # extra_prev = df[df[\"_week_iw\"].lt(win_min)].copy()\r
+
+      \        # extra = pd.concat([extra_prev, extra], ignore_index=True)\r
+
+      \r
+
+      \        if add_flag_is_new and not extra.empty:\r
+
+      \            extra[\"is_new\"] = False\r
+
+      \        if not extra.empty:\r
+
+      \            extra[col_week] =
+      extra[\"_week_iw\"].astype(\"Int64\").astype(str)\r
+
+      \r
+
+      \        out = pd.concat([out_win, extra], ignore_index=True,
+      sort=False)\r
+
+      \    else:\r
+
+      \        out = out_win\r
+
+      \r
+
+      \    # 정렬 및 정리\r
+
+      \    out = out.sort_values([col_sub_loc, col_item, \"_week_iw\"],
+      kind=\"mergesort\").reset_index(drop=True)\r
+
+      \r
+
+      \    # 최종적으로 내부키 제거하고 싶으면 제거\r
+
+      \    # out = out.drop(columns=[\"_week_iw\"], errors=\"ignore\")\r
+
+      \    \r
+
+      \    df_return = out.copy()\r
+
+      \    return df_return\r
+
+      \r
+
+      \r
+
+      @njit(cache=False)\r
+
+      def _calc_one_pass_sub_item(\r
+
+      \    sub_code: np.ndarray,\r
+
+      \    item_code: np.ndarray,\r
+
+      \    week: np.ndarray,\r
+
+      \    inventory: np.ndarray,\r
+
+      \    req: np.ndarray,\r
+
+      \    unplanned: np.ndarray,\r
+
+      \    overdue: np.ndarray,\r
+
+      \    sn_arr: np.ndarray,\r
+
+      \    po_arr: np.ndarray,\r
+
+      \    first_week: int\r
+
+      ):\r
+
+      \    n = week.shape[0]\r
+
+      \    req_mat = np.empty(n, dtype=np.float64)\r
+
+      \    sn_boh  = np.empty(n, dtype=np.float64)\r
+
+      \    po_boh  = np.empty(n, dtype=np.float64)\r
+
+      \    sn_sup  = np.empty(n, dtype=np.float64)\r
+
+      \    po_sup  = np.empty(n, dtype=np.float64)\r
+
+      \    sn_short = np.empty(n, dtype=np.float64)\r
+
+      \    po_short = np.empty(n, dtype=np.float64)\r
+
+      \    sn_eoh  = np.empty(n, dtype=np.float64)\r
+
+      \    po_eoh  = np.empty(n, dtype=np.float64)\r
+
+      \    sn_bal  = np.empty(n, dtype=np.float64)\r
+
+      \    po_bal  = np.empty(n, dtype=np.float64)\r
+
+      \r
+
+      \    is_first = np.empty(n, dtype=np.float64)    # 계산유무 확인 테스트용용\r
+
+      \r
+
+      \    prev_sub = -1       # Sub Location\r
+
+      \    prev_item = -1      # Item Raw Material\r
+
+      \r
+
+      \    prev_sn_eoh = 0.0\r
+
+      \    prev_po_eoh = 0.0\r
+
+      \r
+
+      \    group_first_inv = 0.0\r
+
+      \    group_has_first_week = False\r
+
+      \r
+
+      \    for i in range(n):\r
+
+      \        s = sub_code[i]\r
+
+      \        it = item_code[i]\r
+
+      \r
+
+      \        is_first[i] = 0\r
+
+      \r
+
+      \        # (Sub location, Item Raw Material) 그룹 경계 감지\r
+
+      \        if (s != prev_sub) or (it != prev_item):\r
+
+      \            prev_sub = s\r
+
+      \            prev_item = it\r
+
+      \r
+
+      \            group_has_first_week = False\r
+
+      \            group_first_inv = inventory[i]   # 그룹 첫 행 inventory를 기본
+      first_inv로\r
+
+      \            prev_sn_eoh = group_first_inv\r
+
+      \            prev_po_eoh = group_first_inv\r
+
+      \r
+
+      \            # 🟧 [검증용] 그룹 경계 표기 \r
+
+      \            # print(f\"🟧 index:{i}, sub loc.: {s}, item: {it}, week:
+      {week[i]}, inventory: {inventory[i]}\")\r
+
+      \            is_first[i] = 1\r
+
+      \r
+
+      \r
+
+      \        # STEP1: Requirement Material\r
+
+      \        r = req[i] + unplanned[i] + overdue[i]\r
+
+      \        req_mat[i] = r\r
+
+      \r
+
+      \        # first_week 규칙: 그룹 내에서 Week==first_week를 만나면 그 행 inventory로 리셋\r
+
+      \        if (not group_has_first_week) and (week[i] == first_week):\r
+
+      \            group_has_first_week = True\r
+
+      \            group_first_inv = inventory[i]\r
+
+      \            prev_sn_eoh = group_first_inv\r
+
+      \            prev_po_eoh = group_first_inv\r
+
+      \r
+
+      \        # STEP2: BOH = 전주 EOH (첫주차 행은 위에서 prev_eoh를 inventory로 리셋했으므로
+      동일하게 처리됨)\r
+
+      \        sn_boh_i = prev_sn_eoh\r
+
+      \        po_boh_i = prev_po_eoh\r
+
+      \r
+
+      \        sn_boh[i] = sn_boh_i\r
+
+      \        po_boh[i] = po_boh_i\r
+
+      \r
+
+      \        # STEP3: Supply Material\r
+
+      \        sn_supply_calc = sn_boh_i + sn_arr[i]\r
+
+      \        sn_sup_i = r if r < sn_supply_calc else sn_supply_calc\r
+
+      \        sn_sup[i] = sn_sup_i\r
+
+      \r
+
+      \        po_supply_calc = po_boh_i + sn_arr[i] + po_arr[i]\r
+
+      \        po_sup_i = r if r < po_supply_calc else po_supply_calc\r
+
+      \        po_sup[i] = po_sup_i\r
+
+      \r
+
+      \        # STEP4: Short Material\r
+
+      \        sn_short_i = r - sn_sup_i\r
+
+      \        po_short_i = r - po_sup_i\r
+
+      \        sn_short[i] = sn_short_i\r
+
+      \        po_short[i] = po_short_i\r
+
+      \r
+
+      \        # STEP5: EOH\r
+
+      \        # sn_eoh_i = max((sn_sup_i - r), 0)\r
+
+      \        # po_eoh_i = max((po_sup_i - r), 0)\r
+
+      \        sn_eoh_i = sn_boh_i - sn_sup_i + sn_arr[i]\r
+
+      \        po_eoh_i = po_boh_i - po_sup_i + sn_arr[i] + po_arr[i]\r
+
+      \        sn_eoh[i] = sn_eoh_i\r
+
+      \        po_eoh[i] = po_eoh_i\r
+
+      \r
+
+      \        prev_sn_eoh = sn_eoh_i\r
+
+      \        prev_po_eoh = po_eoh_i\r
+
+      \r
+
+      \        # STEP6: Balance\r
+
+      \        # first_week 규칙: 그룹 내에서 Week==first_week를 만나면 당주 값들로 계산, 이 후 주차는
+      전주의 Balance 값을 참고하여 계산산\r
+
+      \        if (group_has_first_week) and (week[i] == first_week):\r
+
+      \            group_sn_first_bal = sn_boh_i + sn_arr[i] - r\r
+
+      \            group_po_first_bal = po_boh_i + sn_arr[i] + + po_arr[i] - r\r
+
+      \r
+
+      \            prev_sn_val = group_sn_first_bal\r
+
+      \            prev_po_val = group_po_first_bal\r
+
+      \r
+
+      \            sn_val_i = group_sn_first_bal\r
+
+      \            po_val_i = group_po_first_bal\r
+
+      \r
+
+      \        else:\r
+
+      \            sn_val_calc = prev_sn_val + sn_arr[i] - r \r
+
+      \            po_val_calc = prev_po_val + sn_arr[i] + po_arr[i] - r\r
+
+      \r
+
+      \            sn_val_i = sn_val_calc\r
+
+      \            po_val_i = po_val_calc\r
+
+      \r
+
+      \            prev_sn_val = sn_val_i\r
+
+      \            prev_po_val = po_val_i\r
+
+      \r
+
+      \        sn_bal[i] = sn_val_i\r
+
+      \        po_bal[i] = po_val_i\r
+
+      \r
+
+      \    return (req_mat, sn_boh, po_boh, sn_sup, po_sup, sn_short, po_short,
+      sn_eoh, po_eoh, sn_bal, po_bal, is_first)      # is_first은 계산 테스트용\r
+
+      \r
+
+      \r
+
+      @_decoration_\r
+
+      def calculate_psi_data(\r
+
+      \    df_p_source: pd.DataFrame, \r
+
+      \    first_week: int\r
+
+      \    ) -> pd.DataFrame:\r
+
+      \    \"\"\"\r
+
+      \    Mat PSI W 테이블의 값 계산\r
+
+      \    :param df_p_source: Material PSI W [in_Material_PSI_W]\r
+
+      \    :first_week: planweek\r
+
+      \    :return: DataFrame\r
+
+      \    \"\"\"\r
+
+      \r
+
+      \    # 함수명\r
+
+      \    str_my_name = inspect.stack()[0][3]\r
+
+      \    # Return 변수\r
+
+      \    df_return = pd.DataFrame()\r
+
+      \r
+
+      \    # 입력 파라미터가 비어 있는 경우 비어 있는 DataFrame(df_p_source)을 리턴\r
+
+      \    if df_p_source.empty:\r
+
+      \        logger.Note(p_note=f'[{str_my_name}] 입력으로 받은 데이터(df_p_source)가 비어
+      있습니다.',\r
+
+      \                    p_log_level=LOG_LEVEL.warning())\r
+
+      \        return df_p_source\r
+
+      \r
+
+      \    # 0) 컬럼명 선언언\r
+
+      \    col_sub_loc =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SUB_LOCATION)     # 'Sub
+      Location.[Sub Location]'\r
+
+      \    col_item =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.ITEM_RAW_MATERIAL)   # 'Item
+      Raw Material.[Item Raw Material]'\r
+
+      \    col_week =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.WEEK)            #'Time.[Week\
+      ]'\r
+
+      \r
+
+      \    col_inv =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.INVENTORY)        # 'Mat PSI
+      W_Inventory'\r
+
+      \    col_req =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.REQUIREMENT)      # 'Mat PSI
+      W_Requirement'\r
+
+      \    col_upl =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.UNPLANNED)        # 'Mat PSI
+      W_Unplanned'\r
+
+      \    col_ovr
+      =  CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.OVERSDUE)        # 'Mat PSI
+      W_Overdue'\r
+
+      \    col_sn_arr =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_ARRIVAL)    # 'Mat PSI W_SN
+      Arrival'\r
+
+      \    col_po_arr =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_ARRIVAL)    # 'Mat PSI W_PO
+      Arrival'\r
+
+      \r
+
+      \    col_req_mat =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.REQUIREMENT_MATERIAL)       #\
+      'Mat PSI W_Requirement Material'\r
+
+      \    col_sn_boh = CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_BOH)    #
+      'Mat PSI W_SN BOH'\r
+
+      \    col_po_boh = CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_BOH)    #
+      'Mat PSI W_PO BOH'\r
+
+      \    col_sn_sup =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_SUPPLY_MATERIAL)   # 'Mat
+      PSI W_SN Supply Material'\r
+
+      \    col_po_sup =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_SUPPLY_MATERIAL)   # 'Mat
+      PSI W_PO Supply Material\r
+
+      \r
+
+      \    col_sn_short =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_SHORT_MATERIAL)  # Mat PSI
+      W_SN Short Material'\r
+
+      \    col_po_short =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_SHORT_MATERIAL)  # Mat PSI
+      W_PO Short Material'\r
+
+      \r
+
+      \    col_sn_eoh = CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_EOH)    #
+      'Mat PSI W_SN EOH'\r
+
+      \    col_po_eoh = CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_EOH)    #
+      'Mat PSI W_PO EOH'\r
+
+      \r
+
+      \    col_sn_bal =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_BALANCE)    # 'Mat PSI W_SN
+      Balance'\r
+
+      \    col_po_bal =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_BALANCE)    # 'Mat PSI W_PO
+      Balance'\r
+
+      \r
+
+      \r
+
+      \    # 1) 정렬 필수: Sub location, Item, Week\r
+
+      \    df2 = df_p_source.sort_values([col_sub_loc, col_item, col_week],
+      kind=\"mergesort\").reset_index(drop=True)\r
+
+      \r
+
+      \    # 2) key를 category.codes로 변환 (Numba 호환/속도)\r
+
+      \    sub_cat = df2[col_sub_loc].astype(\"category\")\r
+
+      \    item_cat = df2[col_item].astype(\"category\")\r
+
+      \r
+
+      \    sub_code = sub_cat.cat.codes.to_numpy(np.int32, copy=False)\r
+
+      \    item_code = item_cat.cat.codes.to_numpy(np.int32, copy=False)\r
+
+      \r
+
+      \    week = df2[col_week].to_numpy(np.int64, copy=False)\r
+
+      \r
+
+      \    # 3) 수치 컬럼을 numpy로\r
+
+      \    inventory = df2[col_inv].to_numpy(np.float64, copy=False)\r
+
+      \    req = df2[col_req].to_numpy(np.float64, copy=False)\r
+
+      \    unplanned = df2[col_upl].to_numpy(np.float64, copy=False)\r
+
+      \    overdue = df2[col_ovr].to_numpy(np.float64, copy=False)\r
+
+      \    sn_arr = df2[col_sn_arr].to_numpy(np.float64, copy=False)\r
+
+      \    po_arr = df2[col_po_arr].to_numpy(np.float64, copy=False)\r
+
+      \r
+
+      \    out = _calc_one_pass_sub_item(\r
+
+      \        sub_code, item_code, week,\r
+
+      \        inventory, req, unplanned, overdue,\r
+
+      \        sn_arr, po_arr,\r
+
+      \        int(first_week)\r
+
+      \    )\r
+
+      \r
+
+      \    (req_mat, sn_boh, po_boh, sn_sup, po_sup, sn_short, po_short, sn_eoh,
+      po_eoh, sn_bal, po_bal, is_first) = out       # is_first는 계산확인용\r
+
+      \r
+
+      \    df2[col_req_mat] = req_mat\r
+
+      \    df2[col_sn_boh] = sn_boh\r
+
+      \    df2[col_po_boh] = po_boh\r
+
+      \    df2[col_sn_sup] = sn_sup\r
+
+      \    df2[col_po_sup] = po_sup\r
+
+      \    df2[col_sn_short] = sn_short\r
+
+      \    df2[col_po_short] = po_short\r
+
+      \    df2[col_sn_eoh] = sn_eoh\r
+
+      \    df2[col_po_eoh] = po_eoh\r
+
+      \    df2[col_sn_bal] = sn_bal\r
+
+      \    df2[col_po_bal] = po_bal\r
+
+      \r
+
+      \    df2['is_first_week'] = is_first \r
+
+      \    df_return = df2\r
+
+      \r
+
+      \    return df_return\r
+
+      \r
+
+      \r
+
+      @njit(cache=False)\r
+
+      def _build_bg_signal_const_planweek(\r
+
+      \    sub_code: np.ndarray,\r
+
+      \    item_code: np.ndarray,\r
+
+      \    week: np.ndarray,\r
+
+      \    lt_weeks: np.ndarray,\r
+
+      \    constraint_weeks: np.ndarray,\r
+
+      \    planweek: int\r
+
+      ) -> np.ndarray:\r
+
+      \    '''\r
+
+      \    그룹키: (sub_code, item_code)\r
+
+      \    정렬: Sub location, Item, Week (오름차순)\r
+
+      \    lt_weeks: ceil(PO_LT/7) (int64)\r
+
+      \    constraint_weeks: Mat Master_Constraint Period (int64)\r
+
+      \    '''\r
+
+      \r
+
+      \    n = week.shape[0]\r
+
+      \    sig = np.zeros(n, dtype=np.int8)\r
+
+      \r
+
+      \r
+
+      \    prev_sub = -1\r
+
+      \    prev_item = -1\r
+
+      \r
+
+      \    # 그룹 상태\r
+
+      \    first_idx = -1\r
+
+      \    target_idx = -1\r
+
+      \    limit_idx = -1\r
+
+      \    found_planweek = False\r
+
+      \r
+
+      \    for i in range(n):\r
+
+      \        s = sub_code[i]\r
+
+      \        it = item_code[i]\r
+
+      \r
+
+      \        # 그룹 시작 감지: (Sub, Item) 둘 중 하나라도 바뀌면 리셋\r
+
+      \        if (s != prev_sub) or (it != prev_item):\r
+
+      \            prev_sub = s\r
+
+      \            prev_item = it\r
+
+      \r
+
+      \            first_idx = -1\r
+
+      \            target_idx = -1\r
+
+      \            limit_idx = -1\r
+
+      \            found_planweek = False\r
+
+      \r
+
+      \        # planweek(상수) 행 찾기\r
+
+      \        if (not found_planweek) and (week[i] == planweek):\r
+
+      \            found_planweek = True\r
+
+      \            first_idx = i\r
+
+      \r
+
+      \            lw = lt_weeks[i]          # 이 그룹의 lt_weeks (그룹 내 동일하다고 가정)\r
+
+      \            cw = constraint_weeks[i]  # 이 그룹의 constraint_weeks (그룹 내
+      동일하다고 가정)\r
+
+      \r
+
+      \            # 유효성: -1이면 적용 안 함\r
+
+      \            target_idx = first_idx + lw -1 if lw >= 0 else -1   #
+      planweek 포함해서 N개 주\r
+
+      \            limit_idx = first_idx + cw - 1 if cw >= 0 else -1   #
+      planweek 포함해서 N개 주\r
+
+      \r
+
+      \        # planweek가 그룹에 존재할 때만 마킹\r
+
+      \        if found_planweek:\r
+
+      \r
+
+      \            # Target week -> 2\r
+
+      \            if (target_idx != -1) and (i <= target_idx):\r
+
+      \                sig[i] = 2\r
+
+      \                # print(f\"BG: 2, index: {i}\")\r
+
+      \r
+
+      \            # Constraint range: [first_idx, limit_idx] -> 1\r
+
+      \            if (limit_idx != -1) and (i >= first_idx) and (i <=
+      limit_idx):\r
+
+      \                sig[i] = 1\r
+
+      \                # print(f\"BG: 1, index: {i}\")\r
+
+      \r
+
+      \    return sig\r
+
+      \r
+
+      \r
+
+      @_decoration_\r
+
+      def build_bg_signal_planweek_const(\r
+
+      \    df_p_source: pd.DataFrame,\r
+
+      \    df_mat_master: pd.DataFrame,\r
+
+      \    planweek: int,\r
+
+      \    col_sub: str = \"Sub location\",\r
+
+      \    col_item: str = \"Item\",\r
+
+      \    col_week: str = \"Week\",\r
+
+      \    col_po_lt: str = \"Mat Master_PO LT\",\r
+
+      \    col_cp: str = \"Mat Master_Constraint Period\",\r
+
+      \    out_col: str = \"Mat PSI W_BG Signal\",\r
+
+      \    keep_master_cols: bool = False,\r
+
+      ) -> pd.DataFrame:\r
+
+      \    '''\r
+
+      \    df_mat_master: 키(col_sub, col_item) / 값(col_po_lt, col_cp)\r
+
+      \    planweek: 상수(예: 202532)\r
+
+      \r
+
+      \r
+
+      \    규칙\r
+
+      \    - lt_weeks = ceil(PO_LT/7)\r
+
+      \    => (Sub, Item) 그룹에서 Week==planweek인 행을 first_idx로 두고\r
+
+      \        first_idx + lt_weeks 위치의 행에 BG Signal=2\r
+
+      \    - constraint_weeks = Constraint Period\r
+
+      \    => first_idx ~ first_idx+constraint_weeks 구간에 BG Signal=1\r
+
+      \    - 우선순위: 2 > 1\r
+
+      \    '''\r
+
+      \r
+
+      \    # 함수명\r
+
+      \    str_my_name = inspect.stack()[0][3]\r
+
+      \r
+
+      \    # Return 변수\r
+
+      \    df_return = pd.DataFrame()\r
+
+      \r
+
+      \    # 입력 파라미터가 비어 있는 경우 비어 있는 DataFrame(df_p_source)을 리턴\r
+
+      \    if df_p_source.empty:\r
+
+      \        logger.Note(p_note=f'[{str_my_name}] 입력으로 받은 데이터(df_p_source)가 비어
+      있습니다.',\r
+
+      \                    p_log_level=LOG_LEVEL.warning())\r
+
+      \        return df_p_source\r
+
+      \    \r
+
+      \    # 데이터 수정 전 원본 DF 복사\r
+
+      \    df_return = df_p_source.copy(deep=True)\r
+
+      \r
+
+      \    # 1) 필수 컬럼 체크\r
+
+      \    req_2 = [col_sub, col_item, col_week]\r
+
+      \    miss_2 = [c for c in req_2 if c not in df_return.columns]\r
+
+      \    if miss_2:\r
+
+      \        raise KeyError(f\"df_p_source 필수 컬럼 누락: {miss_2}\")\r
+
+      \r
+
+      \    req_m = [col_sub, col_item, col_po_lt, col_cp]\r
+
+      \    miss_m = [c for c in req_m if c not in df_mat_master.columns]\r
+
+      \    if miss_m:\r
+
+      \        raise KeyError(f\"df_mat_master 필수 컬럼 누락: {miss_m}\")\r
+
+      \r
+
+      \    # 2) 마스터 merge (left)\r
+
+      \    df_return = df_return.merge(\r
+
+      \        df_mat_master[[col_sub, col_item, col_po_lt, col_cp]],\r
+
+      \        on=[col_sub, col_item],\r
+
+      \        how=\"left\",\r
+
+      \        copy=False,\r
+
+      \    )\r
+
+      \r
+
+      \    # 3) 타입 정리\r
+
+      \    df_return[col_week] = pd.to_numeric(df_return[col_week],
+      errors=\"raise\").astype(np.int64)\r
+
+      \r
+
+      \    # 4) lt_weeks = ceil(PO_LT/7), 결측은 -1(적용 안 함)\r
+
+      \    po_lt_num = pd.to_numeric(df_return[col_po_lt],
+      errors=\"coerce\").to_numpy(np.float64, copy=False)\r
+
+      \    lt_weeks = np.ceil(po_lt_num / 7.0)\r
+
+      \    lt_weeks = np.where(np.isfinite(lt_weeks), lt_weeks,
+      -1).astype(np.int64)\r
+
+      \r
+
+      \    # 5) constraint_weeks, 결측은 -1(적용 안 함)\r
+
+      \    cp_num = pd.to_numeric(df_return[col_cp],
+      errors=\"coerce\").to_numpy(np.float64, copy=False)\r
+
+      \    constraint_weeks = np.where(np.isfinite(cp_num), cp_num,
+      -1).astype(np.int64)\r
+
+      \r
+
+      \    # 6) 정렬 (필수)\r
+
+      \    df_return = df_return.sort_values([col_sub, col_item, col_week],
+      kind=\"mergesort\").reset_index(drop=True)\r
+
+      \r
+
+      \    # 7) 그룹 코드\r
+
+      \    sub_code =
+      df_return[col_sub].astype(\"category\").cat.codes.to_numpy(np.int32,
+      copy=False)\r
+
+      \    item_code =
+      df_return[col_item].astype(\"category\").cat.codes.to_numpy(np.int32,
+      copy=False)\r
+
+      \    week = df_return[col_week].to_numpy(np.int64, copy=False)\r
+
+      \r
+
+      \    # 8) Numba 1-pass\r
+
+      \    sig = _build_bg_signal_const_planweek(\r
+
+      \        sub_code=sub_code,\r
+
+      \        item_code=item_code,\r
+
+      \        week=week,\r
+
+      \        lt_weeks=lt_weeks,\r
+
+      \        constraint_weeks=constraint_weeks,\r
+
+      \        planweek=int(planweek),\r
+
+      \    )\r
+
+      \r
+
+      \    df_return[out_col] = sig\r
+
+      \r
+
+      \    # 9) master 컬럼 제거 옵션\r
+
+      \    if not keep_master_cols:\r
+
+      \        df_return = df_return.drop(columns=[col_po_lt, col_cp])\r
+
+      \r
+
+      \    # 컬럼 정렬\r
+
+      \    # PSI W 빈 데이터 프레임 생성 [컬럼 리스트 활용용]\r
+
+      \    out_psi_w = CL_Mat_PSI_W.get_cleaned_columns_dataframe()\r
+
+      \r
+
+      \    # df_calculated_BG에서 out_psi_w과 일치하는 컬럼만 필터링\r
+
+      \    psi_w_cols = [col for col in df_return.columns if col in out_psi_w]\r
+
+      \    df_return = df_return[psi_w_cols]\r
+
+      \r
+
+      \    # 컬럼순서 재정렬\r
+
+      \    df_return = df_return.reindex(columns=out_psi_w.columns)\r
+
+      \r
+
+      \    return df_return\r
+
+      \r
+
+      \r
+
+      \r
+
+      if __name__ == '__main__':\r
+
+      \    logger.debug(f'[START] {str_instance} {time.strftime(\"%Y-%m-%d -
+      %H:%M:%S\")}')\r
+
+      \    logger.Start()\r
+
+      \r
+
+      \    # Output 테이블 선언\r
+
+      \    out_Material_PSI_W = pd.DataFrame()\r
+
+      \    out_Material_PSI_Sub = pd.DataFrame()\r
+
+      \r
+
+      \    try:\r
+
+      \r
+
+      \        if is_local:\r
+
+      \            # 로컬인 경우 Output 폴더를 정리한다.\r
+
+      \            for file in os.scandir(str_output_dir):\r
+
+      \                os.remove(file.path)\r
+
+      \r
+
+      \            # 로컬인 경우 파일을 읽어 입력 변수를 정의한다.\r
+
+      \            Param_OUT_VERSION = 'CWV_MP'\r
+
+      \            Param_Exception_Flag = ''\r
+
+      \            Param_PLANTYPE = ''\r
+
+      \r
+
+      \            in_Material_PSI_W = pd.read_csv(str_input_dir +
+      \"/in_Material_PSI_W.csv\", encoding=\"UTF8\")\r
+
+      \            in_Material_Master = pd.read_csv(str_input_dir +
+      \"/in_Material_Master.csv\", encoding=\"UTF8\")\r
+
+      \            in_Version = pd.read_csv(str_input_dir + \"/in_Version.csv\",
+      encoding=\"UTF8\")\r
+
+      \r
+
+      \        # 입력 변수 확인\r
+
+      \        if Param_OUT_VERSION is None or Param_OUT_VERSION.strip() ==
+      '':\r
+
+      \            Param_OUT_VERSION = 'CWV_MP'\r
+
+      \r
+
+      \        # 입력 변수 확인\r
+
+      \        if Param_Exception_Flag is None or Param_Exception_Flag.strip()
+      == '':\r
+
+      \            flag_exception = True\r
+
+      \        elif Param_Exception_Flag == 'S':\r
+
+      \            flag_exception = False\r
+
+      \r
+
+      \        # 입력 변수 확인용 로그\r
+
+      \        logger.Note(p_note=f'Param_OUT_VERSION : {Param_OUT_VERSION}')\r
+
+      \        logger.Note(p_note=f'Param_Exception_Flag :
+      {Param_Exception_Flag}', p_log_level=LOG_LEVEL.debug())\r
+
+      \r
+
+      \        # 입력 테이블 점검 및 로그\r
+
+      \        fn_check_input_table(in_Material_PSI_W, 'in_Material_PSI_W',
+      '0')\r
+
+      \        fn_check_input_table(in_Material_Master, 'in_Material_Master',
+      '0')\r
+
+      \        fn_check_input_table(in_Version, 'in_Version', '0')\r
+
+      \r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        # STEP 0. 전처리\r
+
+      \        ################################################################\
+      ################################################\r
+
+      \r
+
+      \        # 컬럼명 선언: Material PSI W\r
+
+      \        col_sub_loc =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SUB_LOCATION)     # 'Sub
+      Location.[Sub Location]'\r
+
+      \        col_item =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.ITEM_RAW_MATERIAL)   # 'Item
+      Raw Material.[Item Raw Material]'\r
+
+      \        col_week =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.WEEK)                #'Time.[\
+      Week]'\r
+
+      \r
+
+      \        col_inv =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.INVENTORY)            # 'Mat
+      PSI W_Inventory'\r
+
+      \        col_req =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.REQUIREMENT)          # 'Mat
+      PSI W_Requirement'\r
+
+      \        col_upl =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.UNPLANNED)            # 'Mat
+      PSI W_Unplanned'\r
+
+      \        col_ovr
+      =  CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.OVERSDUE)            # 'Mat
+      PSI W_Overdue'\r
+
+      \        col_sn_arr =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_ARRIVAL)        # 'Mat PSI
+      W_SN Arrival'\r
+
+      \        col_po_arr =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_ARRIVAL)        # 'Mat PSI
+      W_PO Arrival'\r
+
+      \r
+
+      \        col_req_mat =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.REQUIREMENT_MATERIAL)     #'M\
+      at PSI W_Requirement Material'\r
+
+      \        col_sn_boh =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_BOH)            # 'Mat PSI
+      W_SN BOH'\r
+
+      \        col_po_boh =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_BOH)            # 'Mat PSI
+      W_PO BOH'\r
+
+      \        col_sn_sup =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_SUPPLY_MATERIAL)   # 'Mat
+      PSI W_SN Supply Material'\r
+
+      \        col_po_sup =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_SUPPLY_MATERIAL)   # 'Mat
+      PSI W_PO Supply Material\r
+
+      \r
+
+      \        col_sn_short =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_SHORT_MATERIAL)  # Mat PSI
+      W_SN Short Material'\r
+
+      \        col_po_short =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_SHORT_MATERIAL)  # Mat PSI
+      W_PO Short Material'\r
+
+      \r
+
+      \        col_sn_eoh =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_EOH)            # 'Mat PSI
+      W_SN EOH'\r
+
+      \        col_po_eoh =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_EOH)            # 'Mat PSI
+      W_PO EOH'\r
+
+      \r
+
+      \        col_sn_bal =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.SN_BALANCE)        # 'Mat PSI
+      W_SN Balance'\r
+
+      \        col_po_bal =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.PO_BALANCE)        # 'Mat PSI
+      W_PO Balance'\r
+
+      \r
+
+      \        col_bg =
+      CL_Mat_PSI_W.clean_column_name(CL_Mat_PSI_W.BG_SIGNAL)             # 'Mat
+      PSI W_BG Signal'\r
+
+      \r
+
+      \        # 컬럼명 선언: Material Master\r
+
+      \        col_po_lt =
+      CL_Mat_Master.clean_column_name(CL_Mat_Master.MASTER_POLT)      # 'Mat
+      Master_PO LT'\r
+
+      \        col_cp =
+      CL_Mat_Master.clean_column_name(CL_Mat_Master.CONSTRAINT_PERIOD)   # 'Mat
+      Master_Constraint Period'\r
+
+      \r
+
+      \r
+
+      \        # STEP 0-0. in_Version 에서 planweek 추출\r
+
+      \        v_Planweek =
+      in_Version[CL_Version.clean_column_name(CL_Version.PLANWEEK)][0]\r
+
+      \        # print(f\"planweek from in_Version: {v_Planweek}\")\r
+
+      \r
+
+      \        ##🟩 로컬 개발시: 하드 코딩 (현재 개발 테넌트의 버전 정보가 불확실실)\r
+
+      \        #v_Planweek = 202546\r
+
+      \        print(f\"🟩 planweek: {v_Planweek}\")\r
+
+      \r
+
+      \        # STEP 0-1. Sub Location, Item Raw Material별로 Planweek 부터
+      Planweek 포함 34주차를 데이터 프레임에 추가.\r
+
+      \        # Sub Loc., Item Raw Mtrl. 별로 Week 정렬렬\r
+
+      \        in_Material_PSI_W = in_Material_PSI_W.sort_values([col_sub_loc,
+      col_item, col_week], kind=\"mergesort\").reset_index(drop=True)\r
+
+      \r
+
+      \        # 주차 결측치 추가 [Planweek 포함 34주 구간]\r
+
+      \        dict_log = {\r
+
+      \            'p_step_no': 0000,\r
+
+      \            'p_step_desc': 'STEP 0. 전처리. 컬럼 클래스 및 planweek 포함 34주차
+      생성성',\r
+
+      \            'p_df_name': 'in_Material_PSI_W_init'\r
+
+      \        }\r
+
+      \        in_Material_PSI_W_init = expand_df_weeks_with_mode(\r
+
+      \            in_Material_PSI_W,\r
+
+      \            v_Planweek,\r
+
+      \            col_sub_loc=col_sub_loc,\r
+
+      \            col_item=col_item,\r
+
+      \            col_week=col_week,\r
+
+      \            n_weeks=34,\r
+
+      \            mode=\"truncate\",\r
+
+      \            fill_missing_weeks=True,\r
+
+      \            add_flag_is_new=True, **dict_log\r
+
+      \        )\r
+
+      \r
+
+      \        # STEP 0-2. 결측치는 0 으로 처리\r
+
+      \        in_Material_PSI_W_init['is_first_week'] = 0\r
+
+      \        in_Material_PSI_W_init = in_Material_PSI_W_init.fillna(0)\r
+
+      \r
+
+      \        # STEP 0-3. Version 컬럼 값 설정 'CWV_MP'\r
+
+      \        in_Material_PSI_W_init[CL_Mat_PSI_Sub.clean_column_name(CL_Mat_P\
+      SI_Sub.VERSION)] = 'CWV_MP'\r
+
+      \r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        # STEP 1 ~ STEP 6 : Numba 라이브러리로 1-Pass Loop 실행.\r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        dict_log = {\r
+
+      \            'p_step_no': 1060,\r
+
+      \            'p_step_desc': ' [STEP 1 ~ STEP 6] Numba 라이브러리로 1-Pass Loop
+      실행(PSI W 계산).',\r
+
+      \            'p_df_name': 'df_calculated'\r
+
+      \        }\r
+
+      \        in_Material_PSI_W_initialized = in_Material_PSI_W_init.copy()\r
+
+      \        df_calculated = calculate_psi_data(in_Material_PSI_W_initialized,
+      v_Planweek, **dict_log)\r
+
+      \r
+
+      \r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        # STEP 7. in_Material_PSI_W 의 Mat PSI W_BG Signal 값 계산 \r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        dict_log = {\r
+
+      \            'p_step_no': 7000,\r
+
+      \            'p_step_desc': 'Step 7. in_Material_PSI_W 의 Mat PSI W_BG
+      Signal 값 계산 ',\r
+
+      \            'p_df_name': 'out_Material_PSI_W'\r
+
+      \        }\r
+
+      \        out_Material_PSI_W = build_bg_signal_planweek_const(\r
+
+      \            df_calculated,\r
+
+      \            in_Material_Master,\r
+
+      \            v_Planweek,\r
+
+      \            col_sub_loc,\r
+
+      \            col_item,\r
+
+      \            col_week,\r
+
+      \            col_po_lt,\r
+
+      \            col_cp,\r
+
+      \            col_bg,\r
+
+      \            keep_master_cols=False, **dict_log\r
+
+      \        )\r
+
+      \r
+
+      \r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        # STEP 8. in_Material_Master 의 컬럼명을 변경하여 Material_PSI_Sub를
+      생성한다.\r
+
+      \        ################################################################\
+      ################################################\r
+
+      \        sub_columns_map = {\r
+
+      \            CL_Mat_Master.clean_column_name(CL_Mat_Master.CONSTRAINT) :
+      CL_Mat_PSI_Sub.clean_column_name(CL_Mat_PSI_Sub.CONSTRAINT),\r
+
+      \            CL_Mat_Master.clean_column_name(CL_Mat_Master.CONSTRAINT_FIL\
+      TER) :
+      CL_Mat_PSI_Sub.clean_column_name(CL_Mat_PSI_Sub.CONSTRAINT_FILTER),\r
+
+      \            CL_Mat_Master.clean_column_name(CL_Mat_Master.MASTER_GROUP1)
+      : CL_Mat_PSI_Sub.clean_column_name(CL_Mat_PSI_Sub.MASTER_GROUP1),\r
+
+      \            CL_Mat_Master.clean_column_name(CL_Mat_Master.MASTER_GROUP1_\
+      FILTER)
+      :  CL_Mat_PSI_Sub.clean_column_name(CL_Mat_PSI_Sub.MASTER_GROUP1_FILTER),\
+      \r
+
+      \            CL_Mat_Master.clean_column_name(CL_Mat_Master.MASTER_GROUP2)
+      : CL_Mat_PSI_Sub.clean_column_name(CL_Mat_PSI_Sub.MASTER_GROUP2),\r
+
+      \            CL_Mat_Master.clean_column_name(CL_Mat_Master.MASTER_GROUP2_\
+      FILTER)
+      :  CL_Mat_PSI_Sub.clean_column_name(CL_Mat_PSI_Sub.MASTER_GROUP2_FILTER),  \
+      \r
+
+      \        }\r
+
+      \r
+
+      \        df_psi_sub = in_Material_Master.rename(columns=sub_columns_map)\r
+
+      \        out_psi_sub = CL_Mat_PSI_Sub.get_cleaned_columns_dataframe()\r
+
+      \r
+
+      \        # df_psi_sub에서 df1_cols_flat과 일치하는 컬럼만 필터링\r
+
+      \        common_cols = [col for col in df_psi_sub.columns if col in
+      out_psi_sub]\r
+
+      \        out_Material_PSI_Sub = df_psi_sub[common_cols]\r
+
+      \r
+
+      \    except Exception as e:\r
+
+      \        trace_msg = traceback.format_exc()\r
+
+      \        logger.Note(p_note=trace_msg, p_log_level=LOG_LEVEL.debug())\r
+
+      \        logger.Error()\r
+
+      \r
+
+      \        if flag_exception:\r
+
+      \            out_Material_PSI_W = None\r
+
+      \            out_Material_PSI_Sub = None\r
+
+      \            raise Exception(e)\r
+
+      \        else:\r
+
+      \            if out_Material_PSI_W.empty:\r
+
+      \                out_Material_PSI_W =
+      CL_Mat_PSI_W.get_cleaned_columns_dataframe()\r
+
+      \r
+
+      \            if out_Material_PSI_Sub.empty:\r
+
+      \                out_Material_PSI_Sub =
+      CL_Mat_PSI_Sub.get_cleaned_columns_dataframe()\r
+
+      \            logger.info(f'{str_instance} exit - {time.strftime(\"%Y-%m-%d
+      - %H:%M:%S\")}')\r
+
+      \    else:\r
+
+      \        if out_Material_PSI_W.empty:\r
+
+      \            out_Material_PSI_W =
+      CL_Mat_PSI_W.get_cleaned_columns_dataframe()\r
+
+      \        if out_Material_PSI_Sub.empty:\r
+
+      \            out_Material_PSI_Sub =
+      CL_Mat_PSI_Sub.get_cleaned_columns_dataframe()\r
+
+      \        logger.Finish()\r
+
+      \r
+
+      \    finally:\r
+
+      \        # MediumWeight 실행 시 Header 없는 빈 데이터프레임이 Output이 되는 경우 오류가 발생함.\r
+
+      \        # 이 오류를 방지하기 위해 Output이 빈 경우을 체크하여 Header를 만들어어 줌.\r
+
+      \r
+
+      \        if out_Material_PSI_W.empty:\r
+
+      \            out_Material_PSI_W =
+      CL_Mat_PSI_W.get_cleaned_columns_dataframe()\r
+
+      \            fn_log_dataframe(out_Material_PSI_W, 'out_Material_PSI_W')\r
+
+      \r
+
+      \        if out_Material_PSI_Sub.empty:\r
+
+      \            out_Material_PSI_Sub =
+      CL_Mat_PSI_Sub.get_cleaned_columns_dataframe()\r
+
+      \            fn_log_dataframe(out_Material_PSI_Sub,
+      'out_Material_PSI_Sub')\r
+
+      \r
+
+      \        logger.info(f'{str_instance} {time.strftime(\"%Y-%m-%d -
+      %H:%M:%S\")}::: Finish :::')"
+    languageId: oracle-sql

@@ -1,0 +1,3 @@
+ ▷ Python -> Rule-> plugins -> Global -> o9.GraphCube.Plugins -> PythonScript 에 위치 (
+ ▷  UII -> Rule-> plugins -> Tenant 에 위치(o9.NSCM.JS.~)
+ ▷  API -> Rule-> plugins -> Tenant 에 위치(o9.NSCM.JS.~)
