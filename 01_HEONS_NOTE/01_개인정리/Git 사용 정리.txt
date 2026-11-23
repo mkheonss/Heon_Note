@@ -1,0 +1,31 @@
+/* ############################################################## */
+/*  Git 초기 설정 - global 설정(git bash)
+/* ############################################################## */
+
+git --version ( git 버전 확인 )
+ 
+git config --global pull.rebase false ( pull merge 기본설정 )
+ 
+git config --global push.autosetupremote true ( push관련 설정, git 2.37이상 버전)
+ 
+git config --global push.default current ( push관련 설정, git 2.37미만 버전 )
+ 
+git config --global user.name "홍길동" ( committer 이름 실명 )
+ 
+git config --global http.sslVerify true ( TLS warning 숨김 )
+ 
+git config --global http.https://source.developers.google.com.sslVerify false ( GCP Git 사용자 )
+ 
+git config --global core.quotepath false ( git status 한글 깨짐 해결 )
+ 
+git config --global core.autocrlf true ( 윈도우 환경에서 개발하므로 커밋할 때 자동으로 CRLF(윈도우)를 LF(리눅스)로 변환해주고, 반대로 Checkout할 때 LF를 CRLF로 변환 )
+ 
+git config --global core.whitespace cr-at-eol
+( 줄 끝에 CR 문자(^M)가 있어도 다르다고 판단하지 않도록 )
+ 
+git config --global fetch.prune true ( 원격에 삭제된 브랜치 로컬에 반영 )
+ 
+git config --global --list ( 설정 내용 확인 )
+ 
+~ ( global 설정이 저장되는 .gitconfig 파일 위치 확인 )
+상황에 맞는 메뉴 있음
