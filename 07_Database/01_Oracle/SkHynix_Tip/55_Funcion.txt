@@ -1,0 +1,86 @@
+/* ######################################################################### */
+/*  날짜 관련                                                                */
+/* ######################################################################### */
+/* =================================== */
+/*  두날짜 사이의 개월수 구하기        */
+/* =================================== */
+SELECT  MONTHS_BETWEEN(TO_DATE('202305'||'01'), TO_DATE('202308'||'01')) +1 FROM DUAL
+;
+
+/* =================================== */
+/*  두날짜 사이의 개월수 구하기        */
+/* =================================== */
+SELECT  MONTHS_BETWEEN(TO_DATE('202305'||'01'), TO_DATE('202308'||'01')) +1 FROM DUAL
+;
+
+/* =================================== */
+/*  월증가, 월감소 구하기        	   */
+/* =================================== */
+ADD_MONTHS(날짜, 숫자) - 날짜 데이터의 월 단위를 입력 숫자 만큼 더하거나 뺀 날짜 하여 반환.
+
+SELECT SYSDATE AS TODAY,
+    ADD_MONTHS(SYSDATE, 1) AS CASE1,
+    ADD_MONTHS(SYSDATE, -1) AS CASE2,
+    ADD_MONTHS(TO_DATE('2023-01-31'), 1) AS CASE3
+FROm dual
+;
+
+/* =================================== */
+/*  월 마지막 날짜 구하기        	   */
+/* =================================== */
+LAST_DAY(날짜) - 입력한 날짜의 마지막 일에 해당하는 날짜를 반환한다.
+SELECT LAST_DAY(SYSDATE) AS CASE1
+     , LAST_DAY(TO_DATE('2023-02-01')) AS CASE2
+	 , LAST_DAY(TO_DATE('2024-02-01')) AS CASE3
+	 , LAST_DAY(TO_DATE('2023-03-01')) AS CASE4
+	 , LAST_DAY(TO_DATE('2023-04-01')) AS CASE5
+FROM dual
+;
+
+/* =================================== */
+/*  날짜를 년월일 기준으로 반올림  	   */
+/* =================================== */
+ROUND(날짜, 기준) - 입력 날짜를 연월일을 기준으로 반올림하여 반환한다
+                    기준에는 year, month, day 등의 문자열을 입력한다.
+SELECT ROUND(TO_DATE('2023-07-05'), 'year') as CASE1,
+    ROUND(TO_DATE('2023-06-05'), 'year') as CASE2,
+    ROUND(TO_DATE('2023-06-16'), 'month') as CASE3,
+    ROUND(TO_DATE('2023-06-15'), 'month') as CASE4,
+    ROUND(TO_DATE('2023-06-15'), 'day') as CASE5,
+    ROUND(TO_DATE('2023-06-14'), 'day') as CASE6
+FROM dual
+;
+
+
+/* =================================== */
+/*  날짜를 년월일 기준으로 버림  	   */
+/* =================================== */
+TRUNC(날짜, 기준) - 입력 날짜를 연월일을 기준으로 버림하여 반환한다
+                    기준에는 year, month, day 등의 문자열을 입력한다.
+SELECT TRUNC(TO_DATE('2023-07-05'), 'year') as CASE1,
+    TRUNC(TO_DATE('2023-06-05'), 'year') as CASE2,
+    TRUNC(TO_DATE('2023-06-16'), 'month') as CASE3,
+    TRUNC(TO_DATE('2023-06-15'), 'month') as CASE4,
+    TRUNC(TO_DATE('2023-06-15'), 'day') as CASE5,
+    TRUNC(TO_DATE('2023-06-14'), 'day') as CASE6
+FROM dual
+;
+
+/* ######################################################################### */
+/*	누적 계산                                                                */
+/* ######################################################################### */
+/* =================================== */
+/*  날짜에 해당하는 값을 누적하여 계산 */
+/* =================================== */
+ SELECT	T1.*
+			 ,SUM(BOH + MFG - SALE) OVER (ORDER BY DT RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+  FROM	(
+					SELECT	'20230401' AS DT, 120 AS BOH, 100 AS MFG, 50 AS SALE
+					  FROM	DUAL
+					UNION ALL  
+					SELECT	'20230402' AS DT, 0 AS BOH, 10 AS MFG, 30 AS SALE
+					  FROM	DUAL
+					UNION ALL  
+					SELECT	'20230403' AS DT, 0 AS BOH, 20 AS MFG, 40 AS SALE
+					  FROM	DUAL    
+		) T1

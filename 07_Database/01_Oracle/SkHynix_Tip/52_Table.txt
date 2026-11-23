@@ -1,0 +1,49 @@
+/* ######################################################################### */
+/*  테이블 정보                                                              */
+/* ######################################################################### */
+/* =================================== */
+/*  테이블 락정보                      */
+/* =================================== */
+SELECT VO.SESSION_ID,DO.OBJECT_NAME, DO.OWNER, DO.OBJECT_TYPE,DO.OWNER,
+       VO.XIDUSN, VO.LOCKED_MODE
+  FROM V$LOCKED_OBJECT VO , DBA_OBJECTS DO
+ WHERE VO.OBJECT_ID = DO.OBJECT_ID
+;
+
+SELECT COUNT(*)
+  FROM V$LOCKED_OBJECT VO , DBA_OBJECTS DO
+ WHERE VO.OBJECT_ID = DO.OBJECT_ID
+;
+
+SELECT A.SID, A.SERIAL#
+  FROM V$SESSION A, V$LOCK B, DBA_OBJECTS C
+ WHERE A.SID=B.SID
+   AND B.ID1=C.OBJECT_ID
+   AND B.TYPE='TM'
+;
+
+ALTER SYSTEM KILL SESSION '965,41838'
+;
+
+/* ######################################################################### */
+/*  테이블 생성                                                              */
+/* ######################################################################### */
+/* =================================== */
+/*  테이블 생성                        */
+/* =================================== */
+CREATE TABLE TEST_RPO_MFG_YIELD
+AS
+SELECT * FROM RPO_MFG_YIELD
+ WHERE 1 = 1
+   AND SUBSTR(PLN_REV, 4, 6) > '202307'
+;
+
+COMMIT;
+
+/* =================================== */
+/*  테이블 MODIFY                      */
+/* =================================== */
+ALTER TABLE TEST_RPO_MFG_YIELD MODIFY PKG_TYP_CD1 DEFAULT '-';
+ALTER TABLE TEST_RPO_MFG_YIELD MODIFY BALL_CNT DEFAULT 0;
+ALTER TABLE TEST_RPO_MFG_YIELD MODIFY ORZN_CD DEFAULT '-';
+COMMIT;

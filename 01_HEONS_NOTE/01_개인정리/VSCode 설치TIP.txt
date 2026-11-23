@@ -1,0 +1,18 @@
+VSCode
+
+공식사이트 - https://code.visualstudio.com/
+
+[D2Coding 깃허브 사이트]
+https://github.com/naver/d2codingfont
+
+
+VSCode 유용한 플러그인
+
+intelliCode - 추천 코드 
+indent-rainbow - 들여쓰기 색상표시
+image preview - 이미지 미리보기
+GitHub Thema - GitHub dark Default
+Material Icon Thema - 파일 아아콘 변경
+Prettier - 코드 포멧팅
+Live Server - HTML 소트코딩 보기(Open with Live Server 메뉴로 브라우저 띄움) - 라이브로 브라우저 갱신
+

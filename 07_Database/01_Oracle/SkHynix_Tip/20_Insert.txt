@@ -1,0 +1,77 @@
+/* ######################################################################### */
+/*  추가                                                                     */
+/* ######################################################################### */
+INSERT INTO TABLE_NAME
+(
+	  COL_NM1, COL_NM2
+	, COL_NM3, COL_NM4
+	, CRT_TM,  CRT_USER_ID
+)
+VALUES
+(
+	  #COL_NM1#, #COL_NM2#
+	, #COL_NM3#, #COL_NM4#
+	, SYSDATE, #onlineContext.userInfo.loginId#
+)
+;
+
+COMMIT;
+
+/* ######################################################################### */
+/*  MERGE                                                                    */
+/* ######################################################################### */
+MERGE INTO WMO_WF_MIX_PLN_RSLT
+USING DUAL
+    ON (
+		PLN_REV = #PLN_REV#
+		AND RP_CD = #RP_CD#
+		AND LINE_CD = #LINE_CD#
+		AND	PLN_TYP_CD = #PLN_TYP_CD#
+		AND	PROD_GBN_CD = #PROD_GBN_CD#
+		AND	FAB2_CD = #FAB2_CD#
+		AND TGT_YM = #TGT_YM#
+		AND UNIT_CD = #UNIT_CD#
+	   )
+WHEN MATCHED THEN
+	UPDATE SET PLN_QTY = #PLN_QTY#
+		   , CHG_YN = 'Y'
+           , CHG_TM = SYSDATE
+           , CHG_USER_ID = #onlineContext.userInfo.loginId#
+WHEN NOT MATCHED THEN
+	INSERT
+	(
+		PLN_REV
+		, RP_CD
+		, LINE_CD
+		, PLN_TYP_CD
+		, PROD_GBN_CD
+		, FAB2_CD
+		, TGT_YM
+		, UNIT_CD
+		, PLN_YW
+		, PLN_QTY
+		, CHG_YN
+		, CRT_TM
+		, CRT_USER_ID
+		, CHG_TM
+		, CHG_USER_ID
+	) 
+	VALUES
+	(
+		#PLN_REV#
+		, #RP_CD#
+		, #LINE_CD#
+		, #PLN_TYP_CD#
+		, #PROD_GBN_CD#
+		, #FAB2_CD#
+		, #TGT_YM#
+		, #UNIT_CD#
+		, #PLN_YW#
+		, #PLN_QTY#
+		, 'N'
+		, SYSDATE
+		, #onlineContext.userInfo.loginId#
+		, SYSDATE
+		, #onlineContext.userInfo.loginId#
+	)
+;	

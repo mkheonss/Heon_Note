@@ -1,0 +1,11 @@
+/* ########################### */
+/* 테이블 생성 					   */
+/* ########################### */
+CREATE TABLE TEST_RPO_MFG_YIELD
+AS
+SELECT * FROM RPO_MFG_YIELD
+ WHERE 1 = 1
+   AND SUBSTR(PLN_REV, 4, 6) > '202307'
+;
+
+COMMIT;

@@ -1,0 +1,74 @@
+﻿/* ######################################################################### */
+/*  배치 실행                                                                */
+/* ######################################################################### */
+/* =================================== */
+/*  배치실행                           */
+/* =================================== */
+DECLARE
+  	VI_RETURN_VALUE VARCHAR2(32767);
+BEGIN
+  	VI_RETURN_VALUE := NULL;
+
+  	RPLS_ADM.RPO_SALE_DIV_INFO_SP( VI_RETURN_VALUE );
+  	COMMIT;
+END;
+
+/* ######################################################################### */
+/*  배치 로그                                                                */
+/* ######################################################################### */
+/* =================================== */
+/*  배치로그 - 프로시저별 확인         */
+/* =================================== */
+SELECT * FROM RPR_PROG_EXEC_H
+ WHERE 1 = 1
+   AND SUB_ID IN ('RPR_DAILY_PROGRESS_SP', 'RPR_DAILY_PROGRESS_SP')
+ ORDER BY CRT_TM DESC
+;
+
+/* =================================== */
+/*  배치 실행시간 확인                 */
+/* =================================== */
+SELECT REV_NO,MAIN_ID,PLN_DT,SUB_STAT_CD
+			, START_TM, END_TM
+     , ROUND(TO_DATE(END_TM, 'YYYY-MM-DD HH24:MI:SS')
+           - TO_DATE(START_TM, 'YYYY-MM-DD HH24:MI:SS'), 2) AS dd
+     , ROUND((TO_DATE(END_TM, 'YYYY-MM-DD HH24:MI:SS')
+            - TO_DATE(START_TM, 'YYYY-MM-DD HH24:MI:SS')) * 24, 2) AS hh
+     , ROUND((TO_DATE(END_TM, 'YYYY-MM-DD HH24:MI:SS')
+            - TO_DATE(START_TM, 'YYYY-MM-DD HH24:MI:SS')) * 24 * 60, 2) AS mm
+     , ROUND((TO_DATE(END_TM, 'YYYY-MM-DD HH24:MI:SS')
+            - TO_DATE(START_TM, 'YYYY-MM-DD HH24:MI:SS')) * 24 * 60 * 60, 2) AS ss
+  FROM RPR_PROG_EXEC_H
+ WHERE SUB_ID IN ('RPR_DAILY_PROGRESS_SP', 'RPR_DAILY_PROGRESS_SP')
+ ORDER BY CRT_TM DESC
+;
+
+/* =================================== */
+/*  배치로그 - 최근 오류 배치          */
+/* =================================== */
+SELECT * FROM RPR_PROG_EXEC_H
+ WHERE 1 = 1
+   --AND SUB_STAT_CD <> 'E'
+ ORDER BY CRT_TM DESC
+ ;
+
+
+/* ##################################################################################################### */
+/* ##################################################################################################### */
+/* ##################################################################################################### */
+SELECT DISTINCT PLAN_NAME FROM EXP_AREA_PLAN_ADJUST_RP
+ WHERE 1 = 1
+   AND PLAN_NAME LIKE 'RP-202309%'
+;
+
+SELECT DISTINCT PLAN_NAME FROM EXP_AREA_PLAN_ASSIGN_RP
+ WHERE 1 = 1
+   AND PLAN_NAME LIKE 'RP-202309%'
+;
+
+
+RPO_RUN_BATCH_JOB_SP
+
+
+SELECT DISTINCT NAME FROM USER_SOURCE WHERE TEXT LIKE '%RPI_YIELD%'; --(프로시저,함수)
+
