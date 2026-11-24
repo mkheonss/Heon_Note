@@ -1,0 +1,29 @@
+
+■ 화면 및 탐색
+• 명령 팔레트 열기: Ctrl + Shift + P (또는 F1)
+• 파일 빠른 검색/열기: Ctrl + P
+• 사이드바 열고 닫기: Ctrl + B
+• 통합 터미널 열고 닫기: `Ctrl + ``
+• 확장 프로그램 보기: Ctrl + Shift + X
+• 설정 열기: Ctrl + ,
+• 단축키 설정 열기: Ctrl + K 후 Ctrl + S
+• 특정 줄로 이동: Ctrl + G
+
+■ 코드 편집
+• 주석 처리 / 해제: Ctrl + /
+• 현재 줄 위·아래로 이동: Alt + ↑ / Alt + ↓
+• 현재 줄 위·아래로 복사: Shift + Alt + ↑ / Shift + Alt + ↓
+• 현재 줄 삭제: Ctrl + Shift + K
+• 현재 줄 전체 선택: Ctrl + L
+• 커서 아래에 새 줄 삽입: Ctrl + Enter
+• 단어 단위 커서 이동: Ctrl + ← / Ctrl + →
+• 문서 맨 위 / 맨 아래 이동: Ctrl + Home / Ctrl + End
+• 코드 자동 정렬(포맷팅): Shift + Alt + F
+
+■ 멀티 커서 및 찾기/바꾸기
+• 동일 단어 순차 선택(멀티 커서): Ctrl + D
+• 파일 내 동일 단어 모두 선택: Ctrl + Shift + L
+• 클릭한 위치에 커서 추가: Alt + 클릭
+• 위·아래 줄에 커서 추가: Ctrl + Alt + ↑ / Ctrl + Alt + ↓
+• 현재 파일 내 찾기 / 바꾸기: Ctrl + F / Ctrl + H
+• 전체 프로젝트에서 찾기: Ctrl + Shift + F
