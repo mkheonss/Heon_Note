@@ -1,0 +1,63 @@
+/*
+=========================
+ PostgreSQL의 계층 구조
+=========================
+방금 VS Code에서 헷갈리셨던 구조를 서랍장에 비유하면 아주 쉽습니다.
+text
+DBMS (PostgreSQL 서버 = 건물 전체)
+ └── Database (예: postgres, my_database = 독립된 아파트 한 채)
+      └── Schema (예: public = 거실, 안방 같은 공간 구분)
+           └── Table (예: users, orders = 실제 물건을 담는 엑셀 시트)
+                └── Row(행) & Column(열) = 실제 데이터
+
+• DBMS (Database Management System): 데이터베이스를 관리해 주는 소프트웨어 자체입니다. (PostgreSQL, MySQL, Oracle 등)
+• Database: 완전히 독립된 데이터 공간입니다. postgres DB와 my_database는 서로 다른 집이라서, 한쪽에 만든 테이블이 다른 쪽에 보이지 않습니다.
+• Schema (스키마): 하나의 데이터베이스 안에서 테이블들을 논리적으로 묶어주는 폴더 역할입니다. 기본적으로 public 스키마를 사용합니다.
+• Table (테이블): 행(Row, 가로줄)과 열(Column, 세로줄)로 이루어진 실제 데이터 저장 표입니다.
+*/
+
+
+/*
+-- 기본 데이터베이스 생성
+CREATE DATABASE my_database;
+
+-- 한국어 정렬 및 UTF-8 인코딩을 명시해서 생성할 경우 (권장)
+CREATE DATABASE my_database
+    WITH ENCODING = 'UTF8'
+    LC_COLLATE = 'ko_KR.UTF-8'
+    LC_CTYPE = 'ko_KR.UTF-8'
+    TEMPLATE = template0;
+*/
+
+-- 1. 사용자 테이블 생성
+CREATE TABLE users (
+    user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    name VARCHAR(50) NOT NULL,
+    age INT CHECK (age >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. 주문 테이블 생성 (외래 키 포함)
+CREATE TABLE orders (
+    order_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    product_name VARCHAR(100) NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
+    ordered_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3. 샘플 데이터 입력
+INSERT INTO users (email, name, age) VALUES
+    ('kim@example.com', '김민수', 29),
+    ('lee@example.com', '이서연', 34),
+    ('park@example.com', '박지훈', 24);
+
+INSERT INTO orders (user_id, product_name, amount) VALUES
+    (1, '기계식 키보드', 145000.00),
+    (1, '무선 마우스', 79000.00),
+    (2, '모니터 암', 98000.00);
+
+-- 4. 조회 확인
+SELECT * FROM users;
+SELECT * FROM orders;
